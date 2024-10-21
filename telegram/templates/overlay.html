@@ -1,0 +1,530 @@
+{% block overlay %}
+<section class="menuWrap">
+	<div class="menu">
+		<div class="me userBg">
+			<div class="image">
+				<img class="image" src="{{request.user.avatar.url}}" alt="">
+			</div>
+			
+			<div class="myinfo">
+			<p class="name">{{user.username}}</p>
+			<p class="phone">+1 12 1234 5678</p>
+			</div>
+			
+			<button class="cloud">
+				<i class="material-icons">bookmark</i>
+			</button>
+			
+			<button class="settings">
+				<i class="material-icons">settings</i>
+			</button>
+		</div>
+		<nav>
+			<button class="ng">
+				<i class="material-icons">&#xE8D3;</i>
+				
+				<span>New Group</span>
+			</button>
+			
+			<button class="nc">
+				<i class="material-icons">&#xE0B6;</i>
+				
+				<span>New Channel</span>
+			</button>
+			
+			<button class="cn">
+				<i class="material-icons">&#xE851;</i>
+				
+				<span>Contacts</span>
+			</button>
+			
+			<button class="cl">
+				<i class="material-icons">&#xE0B0;</i>
+				
+				<span>Calls History</span>
+			</button>
+			
+			<a href="https://telegram.org/faq" target="_blank">
+			<button class="faq">
+				<i class="material-icons">&#xE000;</i>
+				
+				<span>FAQ and Support</span>
+			</button>
+			</a>
+			
+			<a href="{% url 'logout' %}">
+				<button class="lo">
+					<i class="material-icons">&#xE879;</i>
+					
+					<span>Logout</span>
+				</button>
+			</a>
+		</nav>
+		
+		<div class="info">
+		<p>Telegram Web</p>
+		<p>Ver 0.0.2 - <a href="https://en.wikipedia.org/wiki/Telegram_(messaging_service)">About</a></p>
+		<p>Layout coded by: <a href="https://www.github.com/mayrinck">Mayrinck</a></p>
+		</div>
+	</div>
+</section>
+
+<!-- CONVERSATION OPTIONS MENU -->
+<div class="moreMenu">
+	<button class="option about">See Info</button>
+	<button class="option notify">Disable Notifications</button>
+	<button class="option block">Block User</button>
+</div>
+
+<!-- MOBILE OVERLAY -->
+<section class="switchMobile">
+	<p class="title">Mobile Device Detected</p>
+	
+	<p class="desc">Switch to the mobile app for a better performance.</p>
+	
+	<a href="https://play.google.com/store/apps/details?id=org.telegram.messenger&hl=pt_BR&gl=US">
+		<button class="okay">OK</button>
+	</a>
+</section>
+
+<!-- PROFILE OPTIONS OVERLAY -->
+<section class="config">
+	<section class="configSect">
+		<div class="profile">
+		<p class="confTitle">Settings</p>
+		
+		<div class="image">
+			<img class="image" src="{{request.user.avatar.url}}" alt="">
+		</div>
+		
+		<div class="side">
+		<p class="name">{{user.username}}</p>
+		<p class="pStatus">Online</p>
+		</div>
+			
+		<button onclick="chatboxToogleHandler()" class="changePic">Change Profile Picture</button>
+
+		<button class="edit" onclick="editboxToogleHandler()">Edit Profile Info</button>
+
+
+		<div id="size" class="formbold-main-wrapper">
+			<!-- Change Profile -->
+			<div class="w-full">
+			  <div class="formbold-form-wrapper">
+				<div class="formbold-form-header">
+				  <h3>Change Profile</h3>
+				  <button class="formbold-action-btn" onclick="remove()">
+					<span class="formbold-cross-icon">
+					  <svg
+						width="17"
+						height="17"
+						viewBox="0 0 17 17"
+						fill="none"
+						xmlns="http://www.w3.org/2000/svg"
+					  >
+						<path
+						  fill-rule="evenodd"
+						  clip-rule="evenodd"
+						  d="M0.474874 0.474874C1.10804 -0.158291 2.1346 -0.158291 2.76777 0.474874L16.5251 14.2322C17.1583 14.8654 17.1583 15.892 16.5251 16.5251C15.892 17.1583 14.8654 17.1583 14.2322 16.5251L0.474874 2.76777C-0.158291 2.1346 -0.158291 1.10804 0.474874 0.474874Z"
+						  fill="white"
+						/>
+						<path
+						  fill-rule="evenodd"
+						  clip-rule="evenodd"
+						  d="M0.474874 16.5251C-0.158291 15.892 -0.158291 14.8654 0.474874 14.2322L14.2322 0.474874C14.8654 -0.158292 15.892 -0.158291 16.5251 0.474874C17.1583 1.10804 17.1583 2.1346 16.5251 2.76777L2.76777 16.5251C2.1346 17.1583 1.10804 17.1583 0.474874 16.5251Z"
+						  fill="white"
+						/>
+					  </svg>
+					</span>
+				  </button>
+				</div>
+				<form
+				  action=""
+				  method="POST"
+				  class="formbold-chatbox-form"
+				  enctype="multipart/form-data"
+				>
+				{% csrf_token %}
+				  <div class="formbold-mb-5">
+					{{ profile_img.avatar }}
+				  </div>
+				  <div>
+					<button name="update_profile_img" class="formbold-btn w-full">Submit</button>
+				  </div>
+				</form>
+			  </div>
+			</div>
+		</div>
+
+		<div id="editsize" class="formbold-editmain-wrapper">
+			<!-- Edit Profile -->
+			<div class="w-full">
+				<div class="formbold-form-editwrapper">
+				  <div class="formbold-form-header">
+					<h3>Edit Profile</h3>
+					<button class="formbold-editaction-btn" onclick="editremove()">
+					  <span class="formbold-cross-icon">
+						<svg
+						  width="17"
+						  height="17"
+						  viewBox="0 0 17 17"
+						  fill="none"
+						  xmlns="http://www.w3.org/2000/svg"
+						>
+						  <path
+							fill-rule="evenodd"
+							clip-rule="evenodd"
+							d="M0.474874 0.474874C1.10804 -0.158291 2.1346 -0.158291 2.76777 0.474874L16.5251 14.2322C17.1583 14.8654 17.1583 15.892 16.5251 16.5251C15.892 17.1583 14.8654 17.1583 14.2322 16.5251L0.474874 2.76777C-0.158291 2.1346 -0.158291 1.10804 0.474874 0.474874Z"
+							fill="white"
+						  />
+						  <path
+							fill-rule="evenodd"
+							clip-rule="evenodd"
+							d="M0.474874 16.5251C-0.158291 15.892 -0.158291 14.8654 0.474874 14.2322L14.2322 0.474874C14.8654 -0.158292 15.892 -0.158291 16.5251 0.474874C17.1583 1.10804 17.1583 2.1346 16.5251 2.76777L2.76777 16.5251C2.1346 17.1583 1.10804 17.1583 0.474874 16.5251Z"
+							fill="white"
+						  />
+						</svg>
+					  </span>
+					</button>
+				  </div>
+				  <form
+					action="https://formbold.com/s/FORM_ID"
+					method="POST"
+					class="formbold-chatbox-form"
+				  >
+					<div class="formbold-mb-5">
+					  <label for="name" class="formbold-form-label"> Your Name </label>
+					  <input
+						style="border: 1px solid #e0e0e0;"
+						type="text"
+						name="name"
+						id="name"
+						placeholder="Your Name"
+						class="formbold-form-input"
+					  />
+					</div>
+					<div>
+					  <button class="formbold-btn w-full">Submit</button>
+					</div>
+				  </form>
+				</div>
+			  </div>
+		</div>
+
+		  <style>
+			.formbold-mb-5 {
+			  margin-bottom: 20px;
+			}
+			.formbold-pt-3 {
+			  padding-top: 12px;
+			}
+			.formbold-main-wrapper {
+			  display: flex;
+			  align-items: center;
+			  justify-content: center;
+			}
+
+			.formbold-editmain-wrapper {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			  }
+		  
+			.formbold-form-wrapper {
+			  margin: 0 auto;
+			  max-width: 550px;
+			  width: 100%;
+			  background: white;
+			  border: 1px solid #e0e0e0;
+			  border-radius: 8px;
+			  display: none;
+			}
+
+			.formbold-form-editwrapper {
+				margin: 0 auto;
+				max-width: 550px;
+				width: 100%;
+				background: white;
+				border: 1px solid #e0e0e0;
+				border-radius: 8px;
+				display: none;
+			  }
+		  
+			.formbold-form-wrapper.actives {
+			  display: block;
+			}
+
+			.formbold-form-editwrapper.activesedit {
+				display: block;
+			  }
+		  
+			.formbold-form-label {
+			  display: block;
+			  font-weight: 500;
+			  font-size: 16px;
+			  color: #07074d;
+			  margin-bottom: 12px;
+			}
+			.formbold-form-label-2 {
+			  font-weight: 600;
+			  font-size: 20px;
+			  margin-bottom: 20px;
+			}
+		  
+			.formbold-form-input {
+			  width: 95%;
+			  padding-top: 12px;
+			  padding-left: 24px;
+			  padding-bottom: 12px;
+			  border-radius: 6px;
+			  border: 1px solid #e0e0e0;
+			  background: white;
+			  font-weight: 500;
+			  font-size: 16px;
+			  color: #6b7280;
+			  outline: none;
+			  resize: none;
+			}
+			.formbold-form-input:focus {
+			  border-color: #6a64f1;
+			  box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.05);
+			}
+		  
+			.formbold-btn {
+			  text-align: center;
+			  font-size: 16px;
+			  border-radius: 6px;
+			  padding: 14px 32px;
+			  border: none;
+			  font-weight: 600;
+			  background-color: #5c7b97;
+			  color: white;
+			  cursor: pointer;
+			}
+			.formbold-btn:hover {
+			  box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.05);
+			}
+		  
+			.formbold--mx-3 {
+			  margin-left: -12px;
+			  margin-right: -12px;
+			}
+			.formbold-px-3 {
+			  padding-left: 12px;
+			  padding-right: 12px;
+			}
+			.flex {
+			  display: flex;
+			}
+			.flex-wrap {
+			  flex-wrap: wrap;
+			}
+			.w-full {
+			  width: 100%;
+			}
+			.formbold-form-header {
+			  background: #5c7b97;
+			  display: flex;
+			  align-items: center;
+			  justify-content: space-between;
+			  padding: 12px 36px;
+			  border-radius: 8px 8px 0px 0px;
+			}
+			.formbold-form-header h3 {
+			  font-weight: 700;
+			  font-size: 20px;
+			  color: white;
+			}
+			.formbold-form-header button {
+			  color: white;
+			  background: transparent;
+			  border: none;
+			}
+			.formbold-chatbox-form {
+			  padding: 32px 36px;
+			}
+			.formbold-action-buttons {
+			  max-width: 550px;
+			  margin-left: auto;
+			  margin-right: auto;
+			  display: flex;
+			  align-items: center;
+			  justify-content: flex-end;
+			  margin-top: 48px;
+			}
+			.formbold-action-btn {
+			  background: #6a64f1;
+			  color: white;
+			  border-radius: 50%;
+			  margin-left: 20px;
+			  border: none;
+			  cursor: pointer;
+			  display: flex;
+			  align-items: center;
+			  justify-content: center;
+			}
+			.formbold-editaction-btn {
+				background: #6a64f1;
+				color: white;
+				border-radius: 50%;
+				margin-left: 20px;
+				border: none;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			  }
+
+			.pad{
+				padding: 48px;
+			}
+		  
+			.formbold-action-btn .formbold-cross-icon {
+			  display: none;
+			}
+			.formbold-editaction-btn .formbold-cross-icon {
+				display: none;
+			  }
+		  
+			.formbold-action-btn.actives .formbold-cross-icon {
+			  display: block;
+			}
+		  
+			.formbold-action-btn.actives .formbold-chat-icon {
+			  display: none;
+			}
+
+			.formbold-editaction-btn.activesedit .formbold-cross-icon {
+				display: block;
+			  }
+			
+			  .formbold-editaction-btn.activesedit .formbold-chat-icon {
+				display: none;
+			  }
+			@media (min-width: 540px) {
+			  .sm\:w-half {
+				width: 50%;
+			  }
+			}
+		  </style>
+		  <script>
+			const formWrapper = document.querySelector(".formbold-form-wrapper");
+			const formActionButton = document.querySelector(".formbold-action-btn");
+			const size = document.querySelector(".formbold-main-wrapper");
+			function chatboxToogleHandler() {
+			  formWrapper.classList.toggle("actives");
+			  formActionButton.classList.toggle("actives");
+			  document.getElementById("size").setAttribute("class","pad")
+			}
+
+			function remove() {
+				formWrapper.classList.toggle("actives");
+				formActionButton.classList.toggle("actives");
+				document.getElementById("size").removeAttribute("class","pad")
+			}
+
+		
+			const editWrapper = document.querySelector(".formbold-form-editwrapper");
+			const editActionButton = document.querySelector(".formbold-editaction-btn");
+			const editsize = document.querySelector(".formbold-editmain-wrapper");
+			function editboxToogleHandler() {
+			  editWrapper.classList.toggle("activesedit");
+			  editActionButton.classList.toggle("activesedit");
+			  document.getElementById("editsize").setAttribute("class","pad")
+			}
+
+			function editremove() {
+				editWrapper.classList.toggle("activesedit");
+				editActionButton.classList.toggle("activesedit");
+				document.getElementById("editsize").removeAttribute("class","pad")
+			}
+
+		  </script>
+		
+
+
+
+
+
+
+
+	</div>
+	</section>
+	
+	<section class="configSect second">
+		
+		<!-- PROFILE INFO SECTION -->
+		<p class="confTitle">Your Info</p>
+		
+		<div class="information">
+			<ul>
+				<li>Phone Number: <span class="blue phone">+1 12 1234 5678</span></li>
+				<li>Username: <span class="blue username">@USERNAME</span></li>
+				<li>Profile: <span class="blue">https://t.me/USERNAME</span></li>
+			</ul>
+		</div>
+		
+		<!-- NOTIFICATIONS SECTION -->
+		<p class="confTitle">Notifications</p>
+		
+		<div class="optionWrapper deskNotif">
+			<input type="checkbox" id="deskNotif" class="toggleTracer" checked>
+
+			<label class="check deskNotif" for="deskNotif">
+				<div class="tracer"></div>
+			</label>
+			<p>Enable Desktop Notifications</p>
+		</div>
+		
+		<div class="optionWrapper showSName">
+			<input type="checkbox" id="showSName" class="toggleTracer">
+
+			<label class="check" for="showSName">
+				<div class="tracer"></div>
+			</label>
+			<p>Show Sender Name</p>
+		</div>
+		
+		<div class="optionWrapper showPreview">
+			<input type="checkbox" id="showPreview" class="toggleTracer">
+
+			<label class="check" for="showPreview">
+				<div class="tracer"></div>
+			</label>
+			<p>Show Message Preview</p>
+		</div>
+		
+		<div class="optionWrapper playSounds">
+			<input type="checkbox" id="playSounds" class="toggleTracer">
+
+			<label class="check" for="playSounds">
+				<div class="tracer"></div>
+			</label>
+			<p>Play Sounds</p>
+		</div>
+		
+		
+		<p class="confTitle">Other Settings</p>
+		
+			<div class="optionWrapper">
+				<input type="checkbox" id="checkNight" class="toggleTracer">
+				
+				<label class="check DarkThemeTrigger" for="checkNight">
+					<div class="tracer"></div>
+				</label>
+				<p>Dark Theme</p>
+			</div>
+		
+	</section>
+</section>
+
+<!-- DARK FRAME OVERLAY -->
+<section class="overlay"></section>
+
+<!-- -------------------------------- -->
+<!-- SPECIFIC FOR CONNECTION WARNINGS -->
+<!-- -------------------------------- -->
+<div class="alerts">
+	Trying to reconnect... 
+</div>
+{% endblock %}

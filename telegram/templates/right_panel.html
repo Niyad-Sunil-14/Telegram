@@ -1,0 +1,105 @@
+{% block right_panel %}
+<div class="rightPanel">
+    <div class="topBar">
+        <div class="rightSide">
+            <button class="tbButton search">
+                <i class="material-icons">&#xE8B6;</i>
+            </button>
+            <button class="tbButton otherOptions">
+                <i class="material-icons">more_vert</i>
+            </button>
+        </div>
+        
+        <a href="{% url 'home' %}"><button class="go-back">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>Go back</title><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+        </button>
+        </a>
+
+        <div class="leftSide">
+        <p class="chatName">{{room.username}} <span>@RenanMayrinckDesign</span></p>
+        {% if room.user.is_authenticated %}
+            <p class="chatStatus">Online</p>
+        {% else %}
+            <p class="chatStatus">{{room.is_active}}</p>
+        {% endif %}
+        </div>
+    </div>
+    
+    <div class="convHistory userBg">
+        <!-- CONVERSATION GOES HERE! -->
+        
+        <div class="msg messageReceived">
+            Dude, why no one did this before?
+            <span class="timestamp">00:00</span>
+        </div>
+        
+        <div class="msg messageSent">
+            Dunno...
+            <i class="material-icons readStatus">done_all</i>
+            <span class="timestamp">00:01</span>
+        </div>
+        
+        <div class="msg messageReceived">
+            This don't matter now, I did it!
+            <span class="timestamp">00:02</span>
+        </div>
+        
+        <div class="msg messageReceived">
+            Hope someone see this... Someday...
+            <span class="timestamp">00:02</span>
+        </div>
+        
+        <div class="msg messageSent">
+            Actually, more than 10K people did... Congrats!
+            <i class="material-icons readStatus">done</i>
+            <span class="timestamp">00:04</span>
+        </div>
+    </div>
+    
+    <div class="replyBar">
+        <button class="attach">
+            <i class="material-icons d45">attach_file</i>
+        </button>
+        
+        <input type="text" class="replyMessage" placeholder="Type your message..."/>
+        
+        <div class="emojiBar">
+            <div class="emoticonType">
+            <button id="panelEmoji">Emoji</button>
+            <button id="panelStickers">Stickers</button>
+            <button id="panelGIFs">GIFs</button>
+            </div>
+            
+            
+            <!-- Emoji panel -->
+            <div class="emojiList">
+                <button id="smileface" class="pick">
+            </button>
+                <button id="grinningface" class="pick"></button>
+                <button id="tearjoyface" class="pick"></button>
+                <button id="rofl" class="pick"></button>
+                <button id="somface" class="pick"></button>
+                <button id="swfface" class="pick"></button>
+            </div>
+            
+            <!-- the best part of telegram ever: STICKERS!! -->
+            <div class="stickerList">
+                <button id="smileface" class="pick">
+            </button>
+                <button id="grinningface" class="pick"></button>
+                <button id="tearjoyface" class="pick"></button>
+            </div>
+        </div>
+        
+        <div class="otherTools">
+            <button class="toolButtons emoji">
+                <i class="material-icons">face</i>
+            </button>
+            
+            <button class="toolButtons audio">
+                <i class="material-icons">mic</i>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

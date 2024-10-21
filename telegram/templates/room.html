@@ -1,0 +1,82 @@
+{% extends 'common.html' %}
+
+
+{% block left_panel %}
+<div class="leftPanel">
+    <header>
+        <button class="trigger">
+            <svg viewBox="0 0 24 24">
+                <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" />
+            </svg>
+        </button>
+        <form action="" method="post">
+            {% csrf_token %}
+            <input class="searchChats" name="search" type="search" placeholder="Search username"/>
+        </form>
+    </header>    
+    <div class="chats">
+        {% if searched %}
+        {% for user in searched %}
+        <a href="{% url 'room' user.id %}">
+            <div class="chatButton">
+                <div class="chatInfo">
+                <div class="">
+                    <img class="image" src="{{ users.avatar.url }}" alt="">
+                </div>
+                
+                <p class="name">
+                    {{user.username}}
+                </p>
+                
+                <p class="message">Actually, more ...</p>
+                </div>
+                
+                <div class="status onTop">
+                    <p class="date">00:02</p>
+                    <p class="count">10</p>
+                    <i class="material-icons read">done_all</i>
+                    <svg class="fixed" viewBox="0 0 24 24">
+                        <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" />
+                    </svg>
+                </div>
+            </div>
+        </a>
+        <hr>
+        {% endfor %}
+
+        {% else %}
+            <div class="chatButton active">
+                <div class="chatInfo">
+                <div class="">
+                    <img class="image" src="{{ room.avatar.url }}" alt="">
+                </div>
+                
+                <p class="name">
+                    {{room.username}}
+                </p>
+                
+                <p class="message">Actually, more ...</p>
+                </div>
+                
+                <div class="status onTop">
+                    <p class="date">00:02</p>
+                    <p class="count">10</p>
+                    <i class="material-icons read">done_all</i>
+                    <svg class="fixed" viewBox="0 0 24 24">
+                        <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" />
+                    </svg>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+
+{% block right_panel %}
+{% include 'right_panel.html' %}
+{% endblock %}
+
+{% block overlay %}
+{% include 'overlay.html' %}
+{% endblock %}
