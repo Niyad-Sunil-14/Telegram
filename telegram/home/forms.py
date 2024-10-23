@@ -7,7 +7,12 @@ class UpdateImg(ModelForm):
         fields = ['avatar']
 
 
-# class EditProfile(ModelForm):
-#     class Meta:
-#         model=User
-#         fields=['']
+class EditProfile(ModelForm):
+    class Meta:
+        model=User
+        fields=['username','name','email','bio']
+
+class SetName(ModelForm):
+    class Meta:
+        model=User
+        fields=['name']

@@ -16,13 +16,14 @@
         </a>
 
         <div class="leftSide">
-        <p class="chatName">{{room.username}} <span>@RenanMayrinckDesign</span></p>
-        {% if room.user.is_authenticated %}
+        <p class="chatName">{{room.name}} <span>@{{room.username}}</span></p>
+        {% if online_live.online == True %}
             <p class="chatStatus">Online</p>
         {% else %}
-            <p class="chatStatus">{{room.is_active}}</p>
+            <p class="chatStatus">Active {{room.last_seen|timesince}} ago</p>
         {% endif %}
         </div>
+        
     </div>
     
     <div class="convHistory userBg">

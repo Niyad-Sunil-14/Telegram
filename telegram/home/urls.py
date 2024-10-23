@@ -26,6 +26,5 @@ urlpatterns = [
 
     path('room/<pk>',views.userRoom,name="room"),
 
-    path('change_profile/',views.changeProfile,name="change_profile"),
-
+    path('update_status/', views.update_status, name='update_status'),
 ]

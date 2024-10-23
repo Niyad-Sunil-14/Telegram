@@ -7,7 +7,7 @@
 			</div>
 			
 			<div class="myinfo">
-			<p class="name">{{user.username}}</p>
+			<p class="name">{{user.name}}</p>
 			<p class="phone">+1 12 1234 5678</p>
 			</div>
 			
@@ -98,7 +98,7 @@
 		</div>
 		
 		<div class="side">
-		<p class="name">{{user.username}}</p>
+		<p class="name">{{user.name}}</p>
 		<p class="pStatus">Online</p>
 		</div>
 			
@@ -188,23 +188,22 @@
 					</button>
 				  </div>
 				  <form
-					action="https://formbold.com/s/FORM_ID"
+					action=""
 					method="POST"
 					class="formbold-chatbox-form"
+					enctype="multipart/form-data"
 				  >
+				  {% csrf_token %}
+				  {% for field in edit_profile %}
 					<div class="formbold-mb-5">
-					  <label for="name" class="formbold-form-label"> Your Name </label>
-					  <input
-						style="border: 1px solid #e0e0e0;"
-						type="text"
-						name="name"
-						id="name"
-						placeholder="Your Name"
-						class="formbold-form-input"
-					  />
+					  <label for="name" class="formbold-form-label"> {{field.label}} </label>
+					  <div class="formbold-form-input" style="border: 1px solid #e0e0e0;">
+						{{field}}
+					  </div>					  
 					</div>
+				  {% endfor %}
 					<div>
-					  <button class="formbold-btn w-full">Submit</button>
+					  <button name="edit_profile" class="formbold-btn w-full">Submit</button>
 					</div>
 				  </form>
 				</div>
@@ -212,6 +211,12 @@
 		</div>
 
 		  <style>
+			textarea{
+				border: none;
+				width: 435px;
+				height: 125px;
+			}
+
 			.formbold-mb-5 {
 			  margin-bottom: 20px;
 			}
@@ -458,9 +463,9 @@
 		
 		<div class="information">
 			<ul>
+				<li>Username: <span class="blue username">@{{user.username}}</span></li>
+				<li>Bio: <span class="blue">{{user.bio}}</span></li>
 				<li>Phone Number: <span class="blue phone">+1 12 1234 5678</span></li>
-				<li>Username: <span class="blue username">@USERNAME</span></li>
-				<li>Profile: <span class="blue">https://t.me/USERNAME</span></li>
 			</ul>
 		</div>
 		
