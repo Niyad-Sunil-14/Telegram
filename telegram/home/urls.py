@@ -25,6 +25,9 @@ urlpatterns = [
     path('register/',views.registerPage,name="register"),
 
     path('room/<pk>',views.userRoom,name="room"),
+    path('chat/',views.chat_view,name='chat'),
 
     path('update_status/', views.update_status, name='update_status'),
+
+    # path('<str:room_name>/', views.room, name='room'),
 ]

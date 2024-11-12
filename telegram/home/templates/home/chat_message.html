@@ -1,0 +1,12 @@
+{% if message.author == user %}
+    <div id="" class="msg messageSent" style="display: block;">
+        {{message.body}}
+        <i class="material-icons readStatus">done_all</i>
+        <span class="timestamp">00:01</span>
+    </div>
+{% else %}
+    <div class="msg messageReceived">
+        {{message.body}}
+        <span class="timestamp">00:00</span>
+    </div>
+{% endif %}

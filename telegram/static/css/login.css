@@ -101,6 +101,7 @@ a:hover {
 /* modules/form.css */
 
 input {
+  width: 95%;
   background-image: none;
   border: 0;
   color: inherit;

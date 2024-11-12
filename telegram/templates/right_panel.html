@@ -26,35 +26,25 @@
         
     </div>
     
-    <div class="convHistory userBg">
+    <div class="convHistory userBg" id="">
         <!-- CONVERSATION GOES HERE! -->
+        <div id="chat_messages">
+        {% for message in chat_messages %}
+        {% if message.author == user %}
+            <div id="" class="msg messageSent">
+                {{message.body}}
+                <i class="material-icons readStatus">done_all</i>
+                <span class="timestamp">00:01</span>
+            </div>
+        {% else %}
+            <div class="msg messageReceived">
+                {{message.body}}
+                <span class="timestamp">00:00</span>
+            </div>
+        {% endif %}
+        {% endfor %}
+    </div>
         
-        <div class="msg messageReceived">
-            Dude, why no one did this before?
-            <span class="timestamp">00:00</span>
-        </div>
-        
-        <div class="msg messageSent">
-            Dunno...
-            <i class="material-icons readStatus">done_all</i>
-            <span class="timestamp">00:01</span>
-        </div>
-        
-        <div class="msg messageReceived">
-            This don't matter now, I did it!
-            <span class="timestamp">00:02</span>
-        </div>
-        
-        <div class="msg messageReceived">
-            Hope someone see this... Someday...
-            <span class="timestamp">00:02</span>
-        </div>
-        
-        <div class="msg messageSent">
-            Actually, more than 10K people did... Congrats!
-            <i class="material-icons readStatus">done</i>
-            <span class="timestamp">00:04</span>
-        </div>
     </div>
     
     <div class="replyBar">
@@ -62,8 +52,16 @@
             <i class="material-icons d45">attach_file</i>
         </button>
         
-        <input type="text" class="replyMessage" placeholder="Type your message..."/>
-        
+         
+        <form id="chat_message_form" method="post"
+                hx_ext="ws"
+                ws-connect="/ws/room/"
+                ws-send
+                _="on htmx:wsAfterSend reset() me">
+            {% csrf_token %}
+            {{form}}
+        </form>
+
         <div class="emojiBar">
             <div class="emoticonType">
             <button id="panelEmoji">Emoji</button>
