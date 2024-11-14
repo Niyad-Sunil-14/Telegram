@@ -78,7 +78,7 @@ python-engineio==4.10.1
 python-multipart==0.0.15
 python-socketio==5.11.4
 PyYAML==6.0.2
-redis==5.2.0
+redis
 requests==2.32.3
 service-identity==24.2.0
 shortuuid==1.0.13
