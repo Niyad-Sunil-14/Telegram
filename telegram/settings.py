@@ -12,6 +12,13 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+from environ import Env
+import dj_database_url
+
+env=Env()
+Env.read_env()
+
+ENVIRONMENT=env('ENVIRONMENT',default="production")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,10 +28,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-z46@qz)q0r!)x7wqh*!7qo9z2pt!bj*_8r-a22ae!9)l+z7ut_'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+if ENVIRONMENT=='development':
+    DEBUG = True
+else:
+    DEBUG = False
+
 
 ALLOWED_HOSTS = []
 
@@ -32,7 +43,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'channels',
+    'daphne',
     'home',
     'django_htmx',
     'django.contrib.admin',
@@ -41,6 +52,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 # ASGI_APPLICATION = 'telegram.asgi.application'
@@ -57,6 +70,7 @@ AUTH_USER_MODEL='home.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -85,7 +99,26 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'telegram.wsgi.application'
+# WSGI_APPLICATION = 'telegram.wsgi.application'
+
+ASGI_APPLICATION='telegram.asgi.application'
+
+
+if ENVIRONMENT == 'production':
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [(env('REDIS_URL'))],
+            },
+        },
+    }
+else:
+    CHANNEL_LAYERS={
+        'default':{
+            "BACKEND":"channels.layers.InMemoryChannelLayer",
+        }
+    }
 
 
 # Database
@@ -101,6 +134,10 @@ DATABASES = {
         'PORT': '5432'
     }
 }
+
+POSTGRES_LOCALLY=True
+if ENVIRONMENT=='production' or POSTGRES_LOCALLY==True:
+    DATABASES['default']=dj_database_url.parse(env('DATABASE_URL'))
 
 
 # Password validation
@@ -142,10 +179,20 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR,'static')
 ]
-STATIC_ROOT=os.path.join(BASE_DIR,'assets')
+STATIC_ROOT=BASE_DIR / 'staticfiles'
 
-MEDIA_URL='/media/'
-MEDIA_ROOT=os.path.join(BASE_DIR,'media')
+MEDIA_URL='media/'
+
+if ENVIRONMENT=='production' or POSTGRES_LOCALLY==True:
+    DEFAULT_FILE_STORAGE='cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    MEDIA_ROOT=BASE_DIR / 'media'
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': env('CLOUD_NAME'),
+    'API_KEY': env('CLOUD_API_KEY'),
+    'API_SECRET': env('CLOUD_API_SECRET')
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
