@@ -2,10 +2,12 @@ from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from . models import User,UserProfile,GroupMessage,ChatGroup
+from . models import User,UserProfile,ChatGroup,GroupMessage
 from . forms import UpdateImg,EditProfile,SetName,ChatmessageCreateForm
-from django.http import JsonResponse
+from django.http import JsonResponse,HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.http import Http404
+from django.db.models import Prefetch
 
 
 @csrf_exempt
@@ -32,7 +34,9 @@ def home(request,chatroom_name='public-chat'):
             search=request.POST['search']
             searched=User.objects.filter(username__icontains=search)
             profile=User.objects.all()
-            return render(request,'home.html',{'search':search,'searched':searched,'profile':profile,'profile_img':profile_img,'edit_profile':edit_profile})
+            chat_group=get_object_or_404(ChatGroup,group_name=chatroom_name)
+            last_message = chat_group.chat_messages.order_by('-created').first()
+            return render(request,'home.html',{'last_message':last_message,'search':search,'searched':searched,'profile':profile,'profile_img':profile_img,'edit_profile':edit_profile})
         
         elif "update_profile_img" in request.POST:
             profile_img=UpdateImg(request.POST,request.FILES,instance=user)
@@ -113,129 +117,30 @@ def registerPage(request):
 
     return render(request,'register.html')
 
+
 @login_required
-def userRoom(request,pk):
-    room=User.objects.get(pk=pk)
+def chat_view(request,chatroom_name='public-chat'):
     profile=User.objects.all()
     user=request.user
     profile_img=UpdateImg(instance=user)
     edit_profile=EditProfile(instance=user)
-
     status = request.GET.get('status', 'False')
-    online_live=UserProfile.objects.get(pk=pk)
 
-    context={
-        'room':room,
-        'profile':profile,
-        'profile_img':profile_img,
-        'edit_profile':edit_profile,
-        'user_status': status,
-        'online_live':online_live,
-        'chat_messages':chat_messages,
-        'form':form
-    }
-
-    if request.method=="POST":
-        if "search" in request.POST:
-            search=request.POST['search']
-            searched=User.objects.filter(username__icontains=search)
-            profile=User.objects.all()
-            return render(request,'home.html',{'search':search,'searched':searched,'profile':profile,'profile_img':profile_img,'edit_profile':edit_profile})
-
-        elif "update_profile_img" in request.POST:
-                profile_img=UpdateImg(request.POST,request.FILES,instance=user)
-                if profile_img.is_valid():
-                    profile_img.save()
-                    return redirect('/')
-                
-        elif "edit_profile" in request.POST:
-            edit_profile=EditProfile(request.POST,request.FILES,instance=user)
-            if edit_profile.is_valid():
-                edit_profile.save()
-                return redirect('/')
-        
-    elif request.htmx:
-        chat_group=get_object_or_404(ChatGroup,group_name="public-chat")
-        chat_messages=chat_group.chat_messages.all()[:30]
-        form=ChatmessageCreateForm() 
-        if form.is_valid:
-            message=form.save(commit=False)
-            message.author=request.user
-            message.group=chat_group
-            message.save()
-            context={
-                'message':message,
-                'user':request.user
-            }
-            return render(request,'room.html',context)
-    
-    return render(request,'room.html',context)
-
-
-# # def room(request,room_name): 
-#     room=User.objects.get(id=room_name)
-#     profile=User.objects.all()
-#     user=request.user
-#     profile_img=UpdateImg(instance=user)
-#     edit_profile=EditProfile(instance=user)
-
-#     status = request.GET.get('status', 'False')
-#     online_live=UserProfile.objects.get(id=room_name)
-
-#     # msg_room=ChatRoom.objects.get(id=room_name)
-#     # message=msg_room.message_set.all().order_by('created') 
-
-#     context={
-#         'room':room,
-#         'profile':profile,
-#         'profile_img':profile_img,
-#         'edit_profile':edit_profile,
-#         'user_status': status,
-#         'online_live':online_live,
-#         # 'message':message,
-#         'room_name': room_name,
-#     }
-
-#     if request.method=="POST":
-#         if "search" in request.POST:
-#             search=request.POST['search']
-#             searched=User.objects.filter(username__icontains=search)
-#             profile=User.objects.all()
-#             return render(request,'home.html',{'search':search,'searched':searched,'profile':profile,'profile_img':profile_img,'edit_profile':edit_profile})
-
-#         elif "update_profile_img" in request.POST:
-#                 profile_img=UpdateImg(request.POST,request.FILES,instance=user)
-#                 if profile_img.is_valid():
-#                     profile_img.save()
-#                     return redirect('/')
-                
-#         elif "edit_profile" in request.POST:
-#             edit_profile=EditProfile(request.POST,request.FILES,instance=user)
-#             if edit_profile.is_valid():
-#                 edit_profile.save()
-#                 return redirect('/')
-            
-#         # elif "body" in request.POST:
-#         #     # create_host_id=Room.objects.create(
-#         #     #     sender=request.user,
-#         #     #     reciver=User.objects.get(pk=pk)
-#         #     # )
-#         #     # message=Message.objects.create(
-#         #     #     sender=request.user,
-#         #     #     # reciver=Room.objects.get(pk=pk),
-#         #     #     body=request.POST.get('body')
-#         #     # )
-            
-#         #     return redirect('room',room_name)
-        
-#     return render(request, 'room.html',context)
-
-
-@login_required
-def chat_view(request):
-    chat_group=get_object_or_404(ChatGroup,group_name="public-chat")
+    chat_group=get_object_or_404(ChatGroup,group_name=chatroom_name)
     chat_messages=chat_group.chat_messages.all()[:30]
+    last_message = chat_group.chat_messages.order_by('-created').first()
     form=ChatmessageCreateForm()
+
+    other_user=None
+    if chat_group.is_private:
+        if request.user not in chat_group.members.all():
+            raise Http404()
+        for member in chat_group.members.all():
+            if member != request.user:
+                other_user=member
+                break
+
+    online_live=UserProfile.objects.get(pk=other_user.id)
 
     if request.htmx:
         form=ChatmessageCreateForm(request.POST)
@@ -250,4 +155,69 @@ def chat_view(request):
             }
             return render(request,'home/partials/chat_message_p.html',context=context)
         
-    return render(request,"home/chat.html",{'chat_messages':chat_messages,'form':form})
+    if request.method=="POST":
+        if "search" in request.POST:
+            search=request.POST['search']
+            searched=User.objects.filter(username__icontains=search)
+            profile=User.objects.all()
+            return render(request,'home.html',{'last_message':last_message,'search':search,'searched':searched,'profile':profile,'profile_img':profile_img,'edit_profile':edit_profile})
+
+        elif "update_profile_img" in request.POST:
+                profile_img=UpdateImg(request.POST,request.FILES,instance=user)
+                if profile_img.is_valid():
+                    profile_img.save()
+                    return redirect('/')
+                
+        elif "edit_profile" in request.POST:
+            edit_profile=EditProfile(request.POST,request.FILES,instance=user)
+            if edit_profile.is_valid():
+                edit_profile.save()
+                return redirect('/')
+        
+    context={
+        'chat_messages':chat_messages,
+        'form':form,
+        'other_user':other_user,
+        'chatroom_name':chatroom_name,
+        'profile':profile,
+        'profile_img':profile_img,
+        'edit_profile':edit_profile,
+        'user_status': status,
+        'online_live':online_live,
+        'last_message':last_message,
+    }
+        
+    return render(request,"home/chat.html",context)
+
+
+@login_required
+def get_or_create_chatroom(request,username):
+    if request.user.username == username:
+        return redirect('home')
+    
+    other_user=User.objects.get(username=username)
+    my_chatrooms=request.user.chat_groups.filter(is_private=True)
+
+
+    if my_chatrooms.exists():
+        for chatroom in my_chatrooms:
+            if other_user in chatroom.members.all():
+                chatroom=chatroom
+                break
+            else:
+                chatroom=ChatGroup.objects.create(is_private=True)
+                chatroom.members.add(other_user,request.user)
+    else:
+        chatroom=ChatGroup.objects.create(is_private=True)
+        chatroom.members.add(other_user,request.user)
+
+    return redirect('chatroom',chatroom.group_name)
+
+
+
+def delete_message(request, message_id):
+    if request.method == "POST":
+        message = get_object_or_404(GroupMessage, id=message_id)
+        message.delete()
+        return JsonResponse({"success": True})
+    return JsonResponse({"success": False})

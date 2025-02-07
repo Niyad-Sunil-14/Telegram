@@ -1,12 +1,69 @@
 {% if message.author == user %}
     <div id="" class="msg messageSent" style="display: block;">
+        <div class="dropdown">
+            <button id="msg_crud">
+                <i class="material-icons button">more_vert</i>
+            </button>
+            <div class="dropdown-content">
+                <a href="">Edit</a>
+                <button onclick="confirmDelete('{{ message.id }}')">Delete</button>
+            </div>
+        </div>
+        <form action="" method="post">
+            {% csrf_token %}
+        </form>
         {{message.body}}
         <i class="material-icons readStatus">done_all</i>
-        <span class="timestamp">00:01</span>
+        <span class="timestamp">{{message.time}}</span>
     </div>
 {% else %}
     <div class="msg messageReceived">
         {{message.body}}
-        <span class="timestamp">00:00</span>
+        <span class="timestamp">{{message.time}}</span>
     </div>
 {% endif %}
+
+
+
+
+
+
+
+<script>
+    function confirmDelete(messageId) {
+        if (confirm("Are you sure you want to delete this message?")) {
+            // Refresh the page before sending request
+            setTimeout(() => {
+                location.reload();
+            }, 100); // Small delay to allow request to process
+    
+            fetch(`/delete-message/${messageId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": getCSRFToken(),
+                    "Content-Type": "application/json",
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Message deleted successfully!");  // Logged instead of alert
+                } else {
+                    alert("Failed to delete message.");
+                }
+            });
+        }
+    }
+    
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+</script>
+
+
+
+
+
+
+
+

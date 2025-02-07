@@ -17,7 +17,7 @@
         {% if searched %}
         {% for list in searched %}
         {% if list.username != user.username %}
-        <a href="{% url 'room' list.id %}">
+        <a href="{% url 'start-chat' list.username %}">
             <div class="chatButton">
                 <div class="chatInfo">
                 <div class="">
@@ -27,8 +27,10 @@
                 <p class="name">
                     {{list.name}}
                 </p>
-                
-                <p class="message">Actually, more ...</p>
+
+                {% if list.last_message.author == list.user %}
+                    <p class="message">{{ last_message.body }}</p>
+                {% endif %}
                 </div>
                 
                 <div class="status onTop">

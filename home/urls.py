@@ -24,10 +24,12 @@ urlpatterns = [
     path('logout/',views.logoutPage,name="logout"),
     path('register/',views.registerPage,name="register"),
 
-    path('room/<pk>',views.userRoom,name="room"),
-    path('chat/',views.chat_view,name='chat'),
-
     path('update_status/', views.update_status, name='update_status'),
 
-    # path('<str:room_name>/', views.room, name='room'),
+    path('private-chat/<username>',views.get_or_create_chatroom,name="start-chat"),
+    path('private-chat/room/<chatroom_name>',views.chat_view,name="chatroom"),
+
+    path("delete-message/<int:message_id>/", views.delete_message, name="delete_message"),
+
+
 ]

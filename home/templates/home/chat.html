@@ -17,7 +17,7 @@
     <div class="chats">
         {% if searched %}
         {% for user in searched %}
-        <a href="{% url 'room' user.id %}">
+        <a href="{% url 'start-chat' list.username %}">
             <div class="chatButton">
                 <div class="chatInfo">
                 <div class="">
@@ -28,7 +28,7 @@
                     {{user.name}}
                 </p>
                 
-                <p class="message">Actually, more ...</p>
+                <p class="message">rstgdfg</p>
                 </div>
                 
                 <div class="status onTop">
@@ -48,14 +48,16 @@
             <div class="chatButton active">
                 <div class="chatInfo">
                 <div class="">
-                    <img class="image" src="{{ room.avatar.url }}" alt="">
+                    <img class="image" src="{{ other_user.avatar.url }}" alt="">
                 </div>
                 
                 <p class="name">
-                    {{room.name}}
+                    {{other_user.name}}
                 </p>
                 
-                <p class="message">Actually, more ...</p>
+                {% if last_message %}
+                <p class="message">{{ last_message.body }}</p>
+                {% endif %}
                 </div>
                 
                 <div class="status onTop">
@@ -91,11 +93,11 @@
         </a>
 
         <div class="leftSide">
-        <p class="chatName">{{message.author.username}} <span>@{{room.username}}</span></p>
+        <p class="chatName">{{other_user.name}} <span>@{{other_user.username}}</span></p>
         {% if online_live.online == True %}
             <p class="chatStatus">Online</p>
         {% else %}
-            <p class="chatStatus">Active {{room.last_seen|timesince}} ago</p>
+            <p class="chatStatus">Active {{other_user.last_seen|timesince}} ago</p>
         {% endif %}
         </div>
         
@@ -120,7 +122,7 @@
          
         <form id="chat_message_form" 
                 hx-ext="ws"
-                ws-connect="/ws/chatroom/public-chat"
+                ws-connect="/ws/chatroom/{{ chatroom_name }}"
                 ws-send
                 _="on htmx:wsAfterSend reset() me"
                 >

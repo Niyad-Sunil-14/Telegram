@@ -71,7 +71,7 @@
 
 <!-- CONVERSATION OPTIONS MENU -->
 <div class="moreMenu">
-	<button class="option about">See Info</button>
+	<button id="myButton" class="option about">See Info</button>
 	<button class="option notify">Disable Notifications</button>
 	<button class="option block">Block User</button>
 </div>
@@ -520,6 +520,27 @@
 
 <!-- DARK FRAME OVERLAY -->
 <section class="overlay"></section>
+
+<section class="overlay2"></section>
+
+
+
+<!-- OTHERS PROFILE OVERLAY -->
+<section id="myDiv" class="overlay2" style="display: none;">
+	{% include 'profile.html' %}
+</section>
+
+<script>
+// JavaScript to toggle visibility
+	document.getElementById("myButton").addEventListener("click", function() {
+	const div = document.getElementById("myDiv");
+		if (div.style.display === "none") {
+			div.style.display = "block"; // Show the div
+		} else {
+			div.style.display = "none"; // Hide the div again
+		}
+	});
+</script>
 
 <!-- -------------------------------- -->
 <!-- SPECIFIC FOR CONNECTION WARNINGS -->
