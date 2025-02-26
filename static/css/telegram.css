@@ -1069,10 +1069,6 @@ div[class~="onTop"] > .count {
 
 
 
-
-
-
-
 .dropbtn {
 	background-color: #4CAF50;
 	color: white;
@@ -1096,6 +1092,8 @@ div[class~="onTop"] > .count {
 	z-index: 1;
 	margin-left: -150px;
 	place-items: center;
+	padding-top: 5px;
+	padding-bottom: 5px;
   }
   
   .dropdown-content a {
@@ -1105,7 +1103,7 @@ div[class~="onTop"] > .count {
 	display: block;
   }
   
-  .dropdown-content a:hover {background-color: #f1f1f1}
+  .dropdown-content a:hover {background-color: #eaeaea}
   
   .dropdown:hover .dropdown-content {
 	display: block;
@@ -1114,9 +1112,6 @@ div[class~="onTop"] > .count {
   .dropdown:hover .dropbtn {
 	background-color: #3e8e41;
   }
-
-
-
 
 
 
@@ -1145,3 +1140,69 @@ div[class~="onTop"] > .count {
 }
 
  
+
+
+
+
+
+.modal {
+	display: none;
+	position: fixed;
+	z-index: 1000;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+}
+.modal-content {
+	background-color: white;
+	margin: 20% auto;
+	padding: 20px;
+	border-radius: 10px;
+	width: 30%;
+	text-align: center;
+	padding-bottom: 12px;
+}
+.modal button {
+	margin: 10px;
+	padding: 10px 20px;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+}
+.confirm-btn { background-color: red; color: white; }
+.cancel-btn { background-color: gray; color: white; }
+
+
+#deletefont{
+	text-decoration: none;
+    width: -webkit-fill-available;
+    text-align: center;
+	padding-left: 40px;
+}
+
+#trash{
+	height: 23px;
+    position: absolute;
+    margin-left: -39px;
+    margin-top: -3px;
+}
+
+#edit{
+	height: 23px;
+    position: absolute;
+    margin-left: -38.5px;
+    margin-top: -3px;
+}
+
+#editfont{
+	text-decoration: none;
+    width: -webkit-fill-available;
+    text-align: center;
+	padding-left: 20px;
+}
+
+
+
+

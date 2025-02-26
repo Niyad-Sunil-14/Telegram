@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path,include
 from . import views
+import home.routing
 
 urlpatterns = [
     path('',views.home,name="home"),
@@ -30,6 +31,6 @@ urlpatterns = [
     path('private-chat/room/<chatroom_name>',views.chat_view,name="chatroom"),
 
     path("delete-message/<int:message_id>/", views.delete_message, name="delete_message"),
-
+    path('message/update/<int:message_id>/', views.update_message, name='update_message'),
 
 ]

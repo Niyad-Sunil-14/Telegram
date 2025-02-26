@@ -34,3 +34,9 @@ class ChatmessageCreateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['body'].label = ''  # Remove the label for 'body' field
+
+
+class EditMessage(ModelForm):
+    class Meta:
+        model=GroupMessage
+        fields=['body']

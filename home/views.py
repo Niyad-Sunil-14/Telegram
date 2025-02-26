@@ -3,11 +3,13 @@ from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from . models import User,UserProfile,ChatGroup,GroupMessage
-from . forms import UpdateImg,EditProfile,SetName,ChatmessageCreateForm
+from . forms import UpdateImg,EditProfile,SetName,ChatmessageCreateForm,EditMessage
 from django.http import JsonResponse,HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import Http404
 from django.db.models import Prefetch
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 
 @csrf_exempt
@@ -173,6 +175,12 @@ def chat_view(request,chatroom_name='public-chat'):
             if edit_profile.is_valid():
                 edit_profile.save()
                 return redirect('/')
+            
+        # elif "edit_message" in request.POST:
+        #     edit_message=EditMessage(request.POST,request.FILES,instance=user)
+        #     if edit_message.is_valid():
+        #         edit_message.save()
+        #         return edit_message
         
     context={
         'chat_messages':chat_messages,
@@ -221,3 +229,20 @@ def delete_message(request, message_id):
         message.delete()
         return JsonResponse({"success": True})
     return JsonResponse({"success": False})
+
+
+
+def update_message(request, message_id):
+    message = get_object_or_404(GroupMessage, id=message_id) # user=request.user
+    
+    if request.method == "POST":
+        new_body = request.POST.get("body")  # Changed from content to body
+        if new_body:
+            message.body = new_body
+            message.save()
+            return JsonResponse({"success": True})  # Return success JSON response
+        return JsonResponse({"success": False, "error": "No body provided"})
+    
+    return JsonResponse({"success": False, "error": "Invalid request method"})
+
+
