@@ -93,10 +93,9 @@
 
 
 <!-- Edit pop-up model and script -->
-
 <div id="editModal" class="modal" style="display: none;">
     <div class="modal-content">
-        <span class="close" onclick="closeEditModal()">&times;</span>
+        <span class="close" onclick="closeEditModal()">×</span>
         <h2>Edit Message</h2>
         
         <form id="editMessageForm">
@@ -114,7 +113,6 @@
     editSocket.onmessage = function(event) {
         var data = JSON.parse(event.data);
         var messageElement = document.getElementById("message-" + data.message_id);
-
         if (messageElement) {
             var messageBody = messageElement.querySelector(".message-body");
             if (messageBody) {
@@ -135,9 +133,9 @@
         document.getElementById('editModal').style.display = 'none';
     }
 
-    // Prevent form submission from refreshing the page
+    // Handle form submission
     document.getElementById("editMessageForm").addEventListener("submit", function(event) {
-        event.preventDefault();  // Prevent page reload
+        event.preventDefault();  // Prevent page reload from form submission
 
         var messageId = document.getElementById("messageId").value;
         var body = document.getElementById("messageBody").value;
@@ -148,7 +146,8 @@
             "body": body
         }));
 
-        closeEditModal();  // Close the modal after sending the update
+        closeEditModal();  // Close the modal
+        location.reload(); // Refresh the page after sending the update
     });
 
     // Close modal when clicking outside
