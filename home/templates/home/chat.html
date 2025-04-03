@@ -108,7 +108,7 @@
         <!-- CONVERSATION GOES HERE! -->
         <div id="chat_messages" style="display: contents;">
             {% for message in chat_messages %}
-            {% include 'home/chat_message.html' %}
+                {% include 'home/chat_message.html' with chatroom_name=chatroom_name %}
             {% endfor %}
         </div>
     </div>

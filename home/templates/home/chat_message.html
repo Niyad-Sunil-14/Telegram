@@ -1,62 +1,70 @@
 {% if message.author == user %}
-    <div id="" class="msg messageSent" style="display: block;">
+    <div id="message-{{ message.id }}" class="msg messageSent" style="display: block;">
         <div class="dropdown">
             <button id="msg_crud">
                 <i class="material-icons button">more_vert</i>
             </button>
             <div class="dropdown-content">
-
-
                 <!-- Edit Button -->
                 <div style="width: -webkit-fill-available;">
-                    <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body }}')">
-                    <img id="edit" src="/static/images/edit.png" alt="">
-                    Edit</a>
+                    <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body|escapejs }}')">
+                        <img id="edit" src="/static/images/edit.png" alt="">
+                        Edit
+                    </a>
                 </div>        
 
                 <!-- Delete Button -->
                 <div style="width: -webkit-fill-available;">
                     <a id="deletefont" onclick="showPopup('{{ message.id }}')">
-                    <img id="trash" src="/static/images/trash.png" alt="">
-                    Delete</a>
+                        <img id="trash" src="/static/images/trash.png" alt="">
+                        Delete
+                    </a>
                 </div>
             </div>
         </div>
 
-        <form action="" method="post">
-            {% csrf_token %}
-        </form>
-
-        {{message.body}}
+        <span class="message-body">{{ message.body }}</span>
         <i class="material-icons readStatus">done_all</i>
-        <span class="timestamp">{{message.time}}</span>
-
+        <span class="timestamp">{{ message.time }}</span>
     </div>
 {% else %}
-    <div class="msg messageReceived">
-        {{message.body}}
-        <span class="timestamp">{{message.time}}</span>
+    <div id="message-{{ message.id }}" class="msg messageReceived">
+        <span class="message-body">{{ message.body }}</span>
+        <span class="timestamp">{{ message.time }}</span>
     </div>
 {% endif %}
 
-
-
-
 <!-- Delete pop-up model and script -->
 <div id="deleteModal" class="modal">
+    <div class="modal-overlay" onclick="hidePopup()"></div>
     <div class="modal-content">
-        <p>Are you sure you want to delete this message?</p>
-        <button class="confirm-btn" onclick="confirmDelete()">Yes, Delete</button>
-        <button class="cancel-btn" onclick="hidePopup()">Cancel</button>
+        <h3>Confirm Deletion</h3><br>
+        <p>Are you sure you want to delete this message? This action cannot be undone.</p>
+        <div class="modal-buttons">
+            <button class="confirm-btn" onclick="confirmDelete()">Delete</button>
+            <button class="cancel-btn" onclick="hidePopup()">Cancel</button>
+        </div>
     </div>
 </div>
 
 <script>
     let messageToDelete = null;
+    var socket = new WebSocket("ws://" + window.location.host + "/ws/chatroom/{{ chatroom_name }}/");
+
+    socket.onmessage = function(event) {
+        var data = JSON.parse(event.data);
+
+        if (data.action === "delete") {
+            var messageElement = document.getElementById("message-" + data.message_id);
+            if (messageElement) {
+                messageElement.remove(); // Remove message from UI
+            }
+        }
+    };
 
     function showPopup(messageId) {
         messageToDelete = messageId;
-        document.getElementById("deleteModal").style.display = "block";
+        document.getElementById("deleteModal").style.display = "flex";
     }
 
     function hidePopup() {
@@ -65,98 +73,228 @@
 
     function confirmDelete() {
         if (messageToDelete !== null) {
-            setTimeout(() => {
-                location.reload();
-            }, 100); // Refresh the page before sending request
+            // Send delete request via WebSocket
+            socket.send(JSON.stringify({
+                "action": "delete",
+                "message_id": messageToDelete
+            }));
 
-            fetch(`/delete-message/${messageToDelete}/`, {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": getCSRFToken(),
-                    "Content-Type": "application/json",
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log("Message deleted successfully!");
-                }
-            });
+            hidePopup(); // Close modal
         }
-    }
-
-    function getCSRFToken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]').value;
     }
 </script>
 <!-- Delete ends -->
 
 
-<!-- Edit pop-up model and script -->
-<div id="editModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close" onclick="closeEditModal()">×</span>
-        <h2>Edit Message</h2>
-        
-        <form id="editMessageForm">
-            <input type="hidden" id="messageId" name="message_id">
-            <textarea id="messageBody" name="body" required></textarea>
-            <button type="submit">Save Changes</button>
-        </form>
-    </div>
-</div>
 
+<!-- Edit pop-up model and script -->
+<div id="editModal" class="edit-modal">
+    <div class="edit-modal-content">
+      <div class="edit-modal-header">
+        <h2>Edit Message</h2>
+        <button type="button" class="edit-modal-close" onclick="closeEditModal()">×</button>
+      </div>
+      <div class="edit-modal-body">
+        <form id="editMessageForm" class="edit-modal-form">
+          <input type="hidden" id="messageId" name="message_id">
+          <div class="char-counter" id="charCounter">0/300</div>
+          <textarea id="messageBody" name="body" required maxlength="300" placeholder="Edit your message..."></textarea>
+          <div class="edit-modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+            <button type="submit" class="btn-save">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Improved Edit Modal JavaScript -->
+  <script>
+    var editSocket = new WebSocket("ws://" + window.location.host + "/ws/edit_message/");
+    
+    // Send a join message when connected
+    editSocket.onopen = function() {
+      editSocket.send(JSON.stringify({
+        "join": "{{ chatroom_name }}"
+      }));
+    };
+    
+    // Handle incoming edited messages and update the UI in real-time
+    editSocket.onmessage = function(event) {
+      var data = JSON.parse(event.data);
+      if (data.error) {
+        console.error(data.error);
+        return;
+      }
+      
+      // Handle edited messages
+      if (data.message_id && data.body) {
+        var messageElement = document.getElementById("message-" + data.message_id);
+        if (messageElement) {
+          var messageBody = messageElement.querySelector(".message-body");
+          if (messageBody) {
+            messageBody.innerText = data.body;
+          }
+        }
+      }
+      
+      // Handle deleted messages
+      if (data.delete_message_id) {
+        var messageElement = document.getElementById("message-" + data.delete_message_id);
+        if (messageElement) {
+          messageElement.remove();
+        }
+      }
+    };
+    
+    // Open the edit modal and populate form fields
+    function openEditModal(id, body) {
+      document.getElementById('messageId').value = id;
+      document.getElementById('messageBody').value = body;
+      document.getElementById('editModal').style.display = 'flex';
+      document.getElementById('messageBody').focus();
+      updateCharCounter();
+    }
+    
+    // Close the edit modal
+    function closeEditModal() {
+      document.getElementById('editModal').style.display = 'none';
+    }
+    
+    // Update character counter
+    function updateCharCounter() {
+      var textarea = document.getElementById('messageBody');
+      var counter = document.getElementById('charCounter');
+      var length = textarea.value.length;
+      var maxLength = textarea.getAttribute('maxlength');
+      
+      counter.textContent = length + '/' + maxLength;
+      
+      if (length > maxLength * 0.8) {
+        counter.classList.add('limit');
+      } else {
+        counter.classList.remove('limit');
+      }
+    }
+    
+    // Add event listener for textarea input
+    document.getElementById('messageBody').addEventListener('input', updateCharCounter);
+    
+    // Handle form submission
+    document.getElementById("editMessageForm").addEventListener("submit", function(event) {
+      event.preventDefault();
+      
+      var messageId = document.getElementById("messageId").value;
+      var body = document.getElementById("messageBody").value;
+      
+      if (!body.trim()) {
+        return; // Don't submit if message is empty or just whitespace
+      }
+      
+      // Send the updated message via WebSocket
+      editSocket.send(JSON.stringify({
+        "message_id": messageId,
+        "body": body
+      }));
+      
+      closeEditModal();
+    });
+    
+    // Close modal when clicking outside the modal content
+    window.addEventListener('click', function(event) {
+      var modal = document.getElementById('editModal');
+      if (event.target === modal) {
+        closeEditModal();
+      }
+    });
+    
+    // Add keyboard event handler to close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape' && document.getElementById('editModal').style.display === 'flex') {
+        closeEditModal();
+      }
+    });
+  </script>
+<!-- Edit ends -->
+
+
+<!-- EDIT JS realtime -->
 <script>
     var editSocket = new WebSocket("ws://" + window.location.host + "/ws/edit_message/");
+
+    // Send a join message when connected
+    editSocket.onopen = function() {
+        editSocket.send(JSON.stringify({
+            "join": "{{ chatroom_name }}"
+        }));
+    };
 
     // Handle incoming edited messages and update the UI in real-time
     editSocket.onmessage = function(event) {
         var data = JSON.parse(event.data);
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
         var messageElement = document.getElementById("message-" + data.message_id);
         if (messageElement) {
             var messageBody = messageElement.querySelector(".message-body");
             if (messageBody) {
-                messageBody.innerText = data.body;  // Update message content in real-time
+                messageBody.innerText = data.body; // Update message content in real-time
             }
         }
     };
 
-    // Open the edit modal and populate form fields
-    function openEditModal(id, body) {
-        document.getElementById('messageId').value = id;
-        document.getElementById('messageBody').value = body;
-        document.getElementById('editModal').style.display = 'flex';
+    // ... (rest of the script remains the same)
+</script>
+<!-- EDIT ends -->
+
+
+
+<!-- DELETE JS realtime -->
+<script>
+    function confirmDelete() {
+        if (messageToDelete !== null) {
+            // Send WebSocket message for deletion instead of HTTP request
+            editSocket.send(JSON.stringify({
+                "delete_message_id": messageToDelete
+            }));
+            
+            // Hide the popup immediately (WebSocket will handle the actual removal)
+            hidePopup();
+        }
     }
-
-    // Close the edit modal
-    function closeEditModal() {
-        document.getElementById('editModal').style.display = 'none';
-    }
-
-    // Handle form submission
-    document.getElementById("editMessageForm").addEventListener("submit", function(event) {
-        event.preventDefault();  // Prevent page reload from form submission
-
-        var messageId = document.getElementById("messageId").value;
-        var body = document.getElementById("messageBody").value;
-
-        // Send the updated message via WebSocket
-        editSocket.send(JSON.stringify({
-            "message_id": messageId,
-            "body": body
-        }));
-
-        closeEditModal();  // Close the modal
-        location.reload(); // Refresh the page after sending the update
-    });
-
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        var modal = document.getElementById('editModal');
-        if (event.target === modal) {
-            closeEditModal();
+    
+    // Add this to your existing editSocket.onmessage handler
+    editSocket.onmessage = function(event) {
+        var data = JSON.parse(event.data);
+        
+        if (data.error) {
+            console.error(data.error);
+            return;
+        }
+        
+        // Handle edited messages
+        if (data.message_id && data.body) {
+            var messageElement = document.getElementById("message-" + data.message_id);
+            if (messageElement) {
+                var messageBody = messageElement.querySelector(".message-body");
+                if (messageBody) {
+                    messageBody.innerText = data.body;
+                }
+            }
+        }
+        
+        // Handle deleted messages - ADD THIS BLOCK
+        if (data.delete_message_id) {
+            var messageElement = document.getElementById("message-" + data.delete_message_id);
+            if (messageElement) {
+                messageElement.remove(); // Remove the message from DOM for all users
+            }
         }
     };
 </script>
-<!-- Edit ends -->
+<!-- DELETE ends -->
+
+
 

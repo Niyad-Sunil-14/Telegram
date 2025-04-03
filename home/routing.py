@@ -6,6 +6,8 @@ from django.urls import re_path
 websocket_urlpatterns=[
     path("ws/chatroom/<chatroom_name>",ChatroomConsumer.as_asgi()),
     re_path(r"ws/edit_message/$", EditMessageConsumer.as_asgi()),  # Separate WebSocket for editing
+    # re_path(r'ws/chatroom/(?P<chatroom_name>\w+)/$', ChatroomConsumer.as_asgi()),
+
     
 
 ]

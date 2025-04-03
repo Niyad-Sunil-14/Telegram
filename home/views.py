@@ -3,13 +3,11 @@ from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from . models import User,UserProfile,ChatGroup,GroupMessage
-from . forms import UpdateImg,EditProfile,SetName,ChatmessageCreateForm,EditMessage
-from django.http import JsonResponse,HttpResponse
+from . forms import UpdateImg,EditProfile,SetName,ChatmessageCreateForm
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import Http404
-from django.db.models import Prefetch
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
+
 
 
 @csrf_exempt
@@ -175,12 +173,7 @@ def chat_view(request,chatroom_name='public-chat'):
             if edit_profile.is_valid():
                 edit_profile.save()
                 return redirect('/')
-            
-        # elif "edit_message" in request.POST:
-        #     edit_message=EditMessage(request.POST,request.FILES,instance=user)
-        #     if edit_message.is_valid():
-        #         edit_message.save()
-        #         return edit_message
+        
         
     context={
         'chat_messages':chat_messages,
@@ -225,9 +218,9 @@ def get_or_create_chatroom(request,username):
 
 def delete_message(request, message_id):
     if request.method == "POST":
-        message = get_object_or_404(GroupMessage, id=message_id)
-        message.delete()
-        return JsonResponse({"success": True})
+        message = get_object_or_404(GroupMessage, id=message_id, author=request.user)
+        # We'll no longer delete here, as the WebSocket will handle it
+        return JsonResponse({"success": True, "message_id": message_id})
     return JsonResponse({"success": False})
 
 

@@ -62,23 +62,37 @@ class ChatroomConsumer(WebsocketConsumer):
 class EditMessageConsumer(WebsocketConsumer):
     def connect(self):
         self.user = self.scope['user']
+        self.chatroom_name = None
         self.accept()
 
     def disconnect(self, close_code):
-        pass  # No need to remove from group
+        if self.chatroom_name:
+            async_to_sync(self.channel_layer.group_discard)(
+                f"chatroom_{self.chatroom_name}",
+                self.channel_name
+            )
 
     def receive(self, text_data):
-        """Handles message editing"""
         text_data_json = json.loads(text_data)
+        
+        # Handle joining the chatroom group
+        if "join" in text_data_json:
+            self.chatroom_name = text_data_json["join"]
+            async_to_sync(self.channel_layer.group_add)(
+                f"chatroom_{self.chatroom_name}",
+                self.channel_name
+            )
+            return
+
+        # Handle message editing
         message_id = text_data_json["message_id"]
         new_body = text_data_json["body"]
 
         try:
-            message = GroupMessage.objects.get(id=message_id, author=self.user)  # Ensure user owns the message
+            message = GroupMessage.objects.get(id=message_id, author=self.user)
             message.body = new_body
             message.save()
 
-            # Broadcast updated message to all users in the chatroom
             async_to_sync(self.channel_layer.group_send)(
                 f"chatroom_{message.group.group_name}",
                 {
@@ -87,13 +101,71 @@ class EditMessageConsumer(WebsocketConsumer):
                     "body": message.body
                 }
             )
-
         except GroupMessage.DoesNotExist:
             self.send(text_data=json.dumps({"error": "Message not found or permission denied"}))
 
     def edit_message_handler(self, event):
-        """Send updated message to all connected users"""
         self.send(text_data=json.dumps({
             "message_id": event["message_id"],
             "body": event["body"]
+        }))
+
+
+
+    def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        
+        # Handle joining the chatroom group
+        if "join" in text_data_json:
+            self.chatroom_name = text_data_json["join"]
+            async_to_sync(self.channel_layer.group_add)(
+                f"chatroom_{self.chatroom_name}",
+                self.channel_name
+            )
+            return
+        
+        # Handle message editing
+        if "message_id" in text_data_json and "body" in text_data_json:
+            message_id = text_data_json["message_id"]
+            new_body = text_data_json["body"]
+            
+            try:
+                message = GroupMessage.objects.get(id=message_id, author=self.user)
+                message.body = new_body
+                message.save()
+
+                async_to_sync(self.channel_layer.group_send)(
+                    f"chatroom_{message.group.group_name}",
+                    {
+                        "type": "edit_message_handler",
+                        "message_id": message.id,
+                        "body": message.body
+                    }
+                )
+            except GroupMessage.DoesNotExist:
+                self.send(text_data=json.dumps({"error": "Message not found or permission denied"}))
+        
+        # Handle message deletion - ADD THIS BLOCK
+        if "delete_message_id" in text_data_json:
+            message_id = text_data_json["delete_message_id"]
+            
+            try:
+                message = GroupMessage.objects.get(id=message_id, author=self.user)
+                group_name = message.group.group_name
+                message.delete()
+                
+                async_to_sync(self.channel_layer.group_send)(
+                    f"chatroom_{group_name}",
+                    {
+                        "type": "delete_message_handler",
+                        "message_id": message_id
+                    }
+                )
+            except GroupMessage.DoesNotExist:
+                self.send(text_data=json.dumps({"error": "Message not found or permission denied"}))
+
+    # Add this method to handle delete message events
+    def delete_message_handler(self, event):
+        self.send(text_data=json.dumps({
+            "delete_message_id": event["message_id"]
         }))
