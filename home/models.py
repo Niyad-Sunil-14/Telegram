@@ -41,6 +41,7 @@ class GroupMessage(models.Model):
     body = models.CharField(max_length=300)
     created = models.DateTimeField(auto_now_add=True)
     time = models.TimeField(auto_now_add=True,null=True)
+    is_seen = models.BooleanField(default=False)  # New field to track if the message is seen
 
     def __str__(self):
         return f'{self.author.username} : {self.body}'

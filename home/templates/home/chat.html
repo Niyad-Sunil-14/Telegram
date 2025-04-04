@@ -175,13 +175,93 @@
 {% include 'overlay.html' %}
 {% endblock %}
 
-{% block javascript %}
-<script>
 
-    function scrollToBottom(){
-        const container=document.getElementById('chat_container');
-        container.scrollTop=container.scrollHeight;
+{% block javascript %}
+
+<script>
+    // Function to scroll to the bottom of the chat container
+    function scrollToBottom() {
+        const container = document.getElementById('chat_container');
+        container.scrollTop = container.scrollHeight;
     }
-    scrollToBottom()
+    
+    // Scroll to bottom on page load
+    scrollToBottom();
+
+    // WebSocket connection for chatroom
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/chatroom/{{ chatroom_name }}/'
+    );
+
+    // Handle messages from the chatroom socket
+    chatSocket.onmessage = function(e) {
+        try {
+            // Parse incoming WebSocket data as JSON
+            const data = JSON.parse(e.data);
+            
+            // Handle read receipt updates
+            if (data.type === 'message_seen') {
+                console.log('Received seen update for messages:', data.message_ids);
+                data.message_ids.forEach(function(messageId) {
+                    updateMessageSeenStatus(messageId);
+                });
+            }
+        } catch (error) {
+            // If parsing fails, assume it's HTML for a new message
+            document.getElementById('chat_messages').insertAdjacentHTML('beforeend', e.data);
+            scrollToBottom();
+            
+            // Mark messages as seen after receiving a new message
+            chatSocket.send(JSON.stringify({
+                'mark_seen': true
+            }));
+        }
+    };
+
+    // Function to update message seen status in the UI
+    function updateMessageSeenStatus(messageId) {
+        const messageElement = document.getElementById('message-' + messageId);
+        if (messageElement) {
+            const tickIcon = messageElement.querySelector('.material-icons');
+            if (tickIcon) {
+                // Update from grey to blue if not already blue
+                if (tickIcon.classList.contains('grey-tick')) {
+                    tickIcon.classList.remove('grey-tick');
+                    tickIcon.classList.add('blue-tick');
+                }
+            }
+        }
+    }
+
+    // Send periodic pings to keep the connection alive
+    setInterval(function() {
+        if (chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                'type': 'ping'
+            }));
+        }
+    }, 30000); // Every 30 seconds
+    
+    // Mark messages as seen when the window gains focus
+    window.addEventListener('focus', function() {
+        if (chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                'mark_seen': true
+            }));
+        }
+    });
+    
+    // Mark messages as seen when scrolling near the bottom
+    document.getElementById('chat_container').addEventListener('scroll', function() {
+        const container = this;
+        if (container.scrollHeight - container.scrollTop <= container.clientHeight + 100) {
+            if (chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({
+                    'mark_seen': true
+                }));
+            }
+        }
+    });
 </script>
+
 {% endblock %}

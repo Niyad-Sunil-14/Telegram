@@ -1,7 +1,35 @@
 <div id="chat_messages" hx-swap-oob="beforeend">
 
 <div class="fade-in-up">
-    {% include 'home/chat_message.html' %}
+    {% if message.author == user %}
+    <div id="message-{{ message.id }}" class="msg messageSent" style="display: block;">
+        <div class="dropdown">
+            <button id="msg_crud">
+                <i class="material-icons button">more_vert</i>
+            </button>
+            <div class="dropdown-content">
+                <div style="width: -webkit-fill-available;">
+                    <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body|escapejs }}')">
+                    <img id="edit" src="/static/images/edit.png" alt="">
+                    Edit</a>
+                </div>        
+                <div style="width: -webkit-fill-available;">
+                    <a id="deletefont" onclick="showPopup('{{ message.id }}')">
+                    <img id="trash" src="/static/images/trash.png" alt="">
+                    Delete</a>
+                </div>
+            </div>
+        </div>
+        <span class="message-body">{{ message.body }}</span>
+        <i class="material-icons {% if message.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
+        <span class="timestamp">{{ message.time }}</span>
+    </div>
+{% else %}
+    <div id="message-{{ message.id }}" class="msg messageReceived">
+        <span class="message-body">{{ message.body }}</span>
+        <span class="timestamp">{{ message.time }}</span>
+    </div>
+{% endif %}
 </div>
 
 <style>

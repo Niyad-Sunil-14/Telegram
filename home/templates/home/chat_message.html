@@ -5,26 +5,25 @@
                 <i class="material-icons button">more_vert</i>
             </button>
             <div class="dropdown-content">
-                <!-- Edit Button -->
                 <div style="width: -webkit-fill-available;">
-                    <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body|escapejs }}')">
-                        <img id="edit" src="/static/images/edit.png" alt="">
-                        Edit
-                    </a>
+                    <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body }}')">
+                    <img id="edit" src="/static/images/edit.png" alt="">
+                    Edit</a>
                 </div>        
-
-                <!-- Delete Button -->
                 <div style="width: -webkit-fill-available;">
                     <a id="deletefont" onclick="showPopup('{{ message.id }}')">
-                        <img id="trash" src="/static/images/trash.png" alt="">
-                        Delete
-                    </a>
+                    <img id="trash" src="/static/images/trash.png" alt="">
+                    Delete</a>
                 </div>
             </div>
         </div>
 
+        <form action="" method="post">
+            {% csrf_token %}
+        </form>
+
         <span class="message-body">{{ message.body }}</span>
-        <i class="material-icons readStatus">done_all</i>
+        <i class="material-icons {% if message.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
         <span class="timestamp">{{ message.time }}</span>
     </div>
 {% else %}
@@ -298,3 +297,17 @@
 
 
 
+<style>
+  .blue-tick {
+      color: #34B7F1; /* Telegram-like blue color */
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+  }
+  .grey-tick {
+      color: #757575; /* Grey for unseen messages */
+      position: absolute;
+      bottom: 10px;
+      right: 12px;
+  }
+</style>
