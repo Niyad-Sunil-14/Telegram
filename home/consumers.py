@@ -21,7 +21,6 @@ class ChatroomConsumer(WebsocketConsumer):
         )
         self.accept()
 
-        # Mark messages as seen when the user connects (only for non-authors)
         if self.user.is_authenticated:
             self.mark_messages_as_seen()
 
@@ -65,12 +64,23 @@ class ChatroomConsumer(WebsocketConsumer):
         html = render_to_string("home/partials/chat_message_p.html", context=context)
         self.send(text_data=html)
         
-        # Mark messages as seen after receiving new messages (if not the author)
+        # Notify all group members for left panel update
+        for member in self.chatroom.members.all():
+            async_to_sync(self.channel_layer.group_send)(
+                f"user_{member.id}",
+                {
+                    'type': 'notify_new_message',
+                    'chatroom_name': self.chatroom.group_name,
+                    'message_body': message.body,
+                    'message_time': message.created.isoformat(),
+                    'author_username': message.author.username,
+                }
+            )
+
         if self.user != message.author:
             self.mark_messages_as_seen()
 
     def mark_messages_as_seen(self):
-        """Mark all messages not authored by the current user as seen."""
         unseen_messages = GroupMessage.objects.filter(
             group=self.chatroom,
             is_seen=False
@@ -84,7 +94,6 @@ class ChatroomConsumer(WebsocketConsumer):
                 message_ids.append(message.id)
 
             if message_ids:
-                # Broadcast the "seen" update to all connected users
                 async_to_sync(self.channel_layer.group_send)(
                     self.chatroom_name,
                     {
@@ -94,7 +103,6 @@ class ChatroomConsumer(WebsocketConsumer):
                 )
 
     def seen_handler(self, event):
-        """Handle the seen event and send it to the client."""
         self.send(text_data=json.dumps({
             'type': 'message_seen',
             'message_ids': event['message_ids']
@@ -209,4 +217,43 @@ class EditMessageConsumer(WebsocketConsumer):
     def delete_message_handler(self, event):
         self.send(text_data=json.dumps({
             "delete_message_id": event["message_id"]
+        }))
+
+
+class UserNotificationConsumer(WebsocketConsumer):
+    def connect(self):
+        self.user = self.scope['user']
+        if not self.user.is_authenticated:
+            self.close()
+            return
+        
+        self.user_group_name = f"user_{self.user.id}"
+        async_to_sync(self.channel_layer.group_add)(
+            self.user_group_name,
+            self.channel_name
+        )
+        self.accept()
+
+    def disconnect(self, close_code):
+        if hasattr(self, 'user_group_name'):
+            async_to_sync(self.channel_layer.group_discard)(
+                self.user_group_name,
+                self.channel_name
+            )
+
+    def notify_status(self, event):
+        self.send(text_data=json.dumps({
+            'type': 'status_update',
+            'user_id': event['user_id'],
+            'username': event['username'],
+            'online': event['online']
+        }))
+
+    def notify_new_message(self, event):
+        self.send(text_data=json.dumps({
+            'type': 'new_message',
+            'chatroom_name': event['chatroom_name'],
+            'message_body': event['message_body'],
+            'message_time': event['message_time'],
+            'author_username': event['author_username'],
         }))

@@ -586,15 +586,15 @@ div[class~="onTop"] > .count {
 
 .status .date {
 	position: absolute;
-	right: 12px;
-	top: 12px;
+	right: 38px;
+    top: 50px;
 	font-size: 12px;
 }
 
 .status .read {
 	position: absolute;
-	right: 53px;
-	top: 6px;
+    right: 7px;
+    top: 43px;
 }
 
 .rightPanel {
