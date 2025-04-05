@@ -37,6 +37,7 @@
                         {% else %}
                         <p class="date"></p>
                         {% endif %}
+                        <span class="unread-count" data-chatroom="{{ chat.group_name }}">{{ chat.unread_count|default_if_none:0 }}</span> <!-- Unread count placeholder -->
                         <i class="material-icons read">done_all</i>
                         <svg class="fixed" viewBox="0 0 24 24">
                             <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" />
@@ -167,27 +168,31 @@
     const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chatroom/{{ chatroom_name }}/');
     const notificationSocket = new WebSocket('ws://' + window.location.host + '/ws/user_notifications/');
 
+    chatSocket.onopen = function() {
+        console.log("Chat socket opened, marking messages as seen");
+        chatSocket.send(JSON.stringify({ 'mark_seen': true }));
+    };
+
     chatSocket.onmessage = function(e) {
-        try {
-            const data = JSON.parse(e.data);
-            if (data.type === 'message_seen') {
-                data.message_ids.forEach(function(messageId) {
-                    updateMessageSeenStatus(messageId);
-                });
-            }
-        } catch (error) {
+        const data = JSON.parse(e.data);
+        console.log("Chat socket message received:", data);  // Debug log
+        if (data.type === 'message_seen') {
+            data.message_ids.forEach(function(messageId) {
+                updateMessageSeenStatus(messageId);
+            });
+        } else {
             document.getElementById('chat_messages').insertAdjacentHTML('beforeend', e.data);
             scrollToBottom();
-            chatSocket.send(JSON.stringify({ 'mark_seen': true }));
         }
     };
 
     notificationSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
+        console.log("Notification socket message received:", data);  // Debug log
         if (data.type === 'status_update') {
             updateOnlineStatus(data.user_id, data.username, data.online);
         } else if (data.type === 'new_message') {
-            updateChatList(data.chatroom_name, data.message_body, data.message_time, data.author_username);
+            updateChatList(data.chatroom_name, data.message_body, data.message_time, data.author_username, data.unread_count);
         }
     };
 
@@ -195,10 +200,14 @@
         const messageElement = document.getElementById('message-' + messageId);
         if (messageElement) {
             const tickIcon = messageElement.querySelector('.material-icons');
-            if (tickIcon && tickIcon.classList.contains('grey-tick')) {
+            if (tickIcon) {
                 tickIcon.classList.remove('grey-tick');
                 tickIcon.classList.add('blue-tick');
             }
+            // Optional: Force re-render if needed
+            fetch(`/private-chat/room/{{ chatroom_name }}`).then(response => response.text()).then(html => {
+                document.getElementById('chat_messages').innerHTML = html.match(/<div id="chat_messages"[^>]*>([\s\S]*?)<\/div>/)[1];
+            });
         }
     }
 
@@ -231,35 +240,32 @@
         });
     }
 
-    function updateChatList(chatroomName, messageBody, messageTime, authorUsername) {
+    function updateChatList(chatroomName, messageBody, messageTime, authorUsername, unreadCount) {
         const chatsContainer = document.querySelector('.chats');
         let existingChat = null;
 
-        // Check for an existing chat by username (for private chats) or chatroomName (for group chats)
         const chatButtons = chatsContainer.querySelectorAll('.chatButton');
         chatButtons.forEach(function(button) {
             const nameElement = button.querySelector('.name');
             const href = button.parentElement.getAttribute('href');
             if (nameElement && nameElement.textContent.trim() === authorUsername) {
-                existingChat = button;  // Found a private chat with this user
+                existingChat = button;
             } else if (href === `/private-chat/room/${chatroomName}`) {
-                existingChat = button;  // Found a group chat or exact match
+                existingChat = button;
             }
         });
 
         if (existingChat) {
-            // Update existing chat entry
-            existingChat.querySelector('.message').textContent = messageBody.substring(0, 30);
-            const timeDiff = Math.floor((new Date() - new Date(messageTime)) / 60000);
-            existingChat.querySelector('.date').textContent = timeDiff < 1 ? 'Just now' : `${timeDiff} min ago`;
-            // Move to top
+            existingChat.querySelector('.message').textContent = messageBody ? messageBody.substring(0, 30) : existingChat.querySelector('.message').textContent;
+            const timeDiff = messageTime ? Math.floor((new Date() - new Date(messageTime)) / 60000) : null;
+            existingChat.querySelector('.date').textContent = timeDiff !== null ? (timeDiff < 1 ? 'Just now' : `${timeDiff} min ago`) : existingChat.querySelector('.date').textContent;
             chatsContainer.insertBefore(existingChat.parentElement, chatsContainer.firstChild);
             const hr = existingChat.parentElement.nextElementSibling;
             if (hr && hr.tagName === 'HR') {
                 chatsContainer.insertBefore(hr, existingChat.parentElement.nextSibling);
             }
+            updateUnreadCount(existingChat, chatroomName, unreadCount);
         } else {
-            // Create a new chat entry
             const newChat = document.createElement('a');
             newChat.href = `/private-chat/room/${chatroomName}`;
             newChat.innerHTML = `
@@ -267,10 +273,11 @@
                     <div class="chatInfo">
                         <div><img class="image" src="/static/avatar.svg" alt=""></div>
                         <p class="name">${authorUsername}</p>
-                        <p class="message">${messageBody.substring(0, 30)}</p>
+                        <p class="message">${messageBody ? messageBody.substring(0, 30) : 'No messages yet'}</p>
                     </div>
                     <div class="status onTop">
-                        <p class="date">Just now</p>
+                        <p class="date">${messageTime ? 'Just now' : ''}</p>
+                        <span class="unread-count" data-chatroom="${chatroomName}">${unreadCount > 0 ? unreadCount : ''}</span>
                         <i class="material-icons read">done_all</i>
                         <svg class="fixed" viewBox="0 0 24 24">
                             <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" />
@@ -281,8 +288,25 @@
             chatsContainer.insertBefore(newChat, chatsContainer.firstChild);
             const hr = document.createElement('hr');
             chatsContainer.insertBefore(hr, newChat.nextSibling);
+            updateUnreadCount(newChat.querySelector('.chatButton'), chatroomName, unreadCount);
         }
     }
+
+    function updateUnreadCount(chatButton, chatroomName, unreadCount) {
+        const unreadElement = chatButton.querySelector('.unread-count');
+        if (unreadElement) {
+            unreadElement.textContent = unreadCount > 0 ? unreadCount : '';
+            unreadElement.classList.toggle('active', unreadCount > 0);
+            if (chatroomName === '{{ chatroom_name }}' && unreadCount === 0) {
+                unreadElement.classList.remove('active');
+            }
+        }
+    }
+
+    document.querySelectorAll('.unread-count').forEach(function(element) {
+        const count = parseInt(element.textContent, 10);
+        element.classList.toggle('active', count > 0);
+    });
 
     setInterval(function() {
         if (chatSocket.readyState === WebSocket.OPEN) {

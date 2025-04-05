@@ -24,12 +24,16 @@ class UserProfile(models.Model):
 
 
 class ChatGroup(models.Model):
-    group_name=models.CharField(max_length=200,unique=True,default=shortuuid.uuid)
-    members=models.ManyToManyField(User,related_name='chat_groups',blank=True)
-    is_private=models.BooleanField(default=False)
+    group_name = models.CharField(max_length=200, unique=True, default=shortuuid.uuid)
+    members = models.ManyToManyField(User, related_name='chat_groups', blank=True)
+    is_private = models.BooleanField(default=False)
 
     def get_last_message(self):
         return self.chat_messages.order_by('-created').first()
+
+    def get_unread_count(self, user):
+        """Return the count of unread messages for a specific user."""
+        return self.chat_messages.filter(is_seen=False).exclude(author=user).count()
 
     def __str__(self):
         return self.group_name
