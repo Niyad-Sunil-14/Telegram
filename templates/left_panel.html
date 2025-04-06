@@ -13,31 +13,9 @@
         </form>
     </header>    
     <div class="chats">
-        {% if search and searched %}
-            {% for user in searched %}
-            <a href="{% url 'start-chat' user.username %}">
-                <div class="chatButton">
-                    <div class="chatInfo">
-                        <div class="">
-                            <img class="image" src="{{ user.avatar.url|default:'/static/avatar.svg' }}" alt="">
-                        </div>
-                        <p class="name">
-                            {{ user.name|default:user.username }}
-                        </p>
-                        <p class="message">Start a chat</p>
-                    </div>
-                    <div class="status onTop {% if user.userprofile.online %}online{% endif %}">
-                        <p class="date"></p>
-                        <i class="material-icons read">done_all</i>
-                    </div>
-                </div>
-            </a>
-            <hr>
-            {% endfor %}
-        {% else %}
-            {% for chat in recent_chats %}
+        {% for chat in recent_chats %}
             <a href="{% url 'chatroom' chat.group_name %}">
-                <div class="chatButton">
+                <div class="chatButton {% if chat.group_name == chatroom_name %}active{% endif %}">
                     <div class="chatInfo">
                         <div class="">
                             <img class="image" src="{{ chat.avatar_url }}" alt="">
@@ -54,21 +32,23 @@
                     <div class="status onTop {% if chat.online_status %}online{% endif %}">
                         {% if chat.last_message %}
                         <p class="date">{{ chat.last_message.created|timesince }}</p>
-                        {% else %}
-                        <p class="date"></p>
                         {% endif %}
                         {% if chat.unread_count > 0 %}
                         <span class="unread-count">{{ chat.unread_count }}</span>
                         {% endif %}
-                        <i class="material-icons read">done_all</i>
+                        {% if chat.is_seen is not None %}  <!-- Only show for authenticated user's messages -->
+                        <i style="position: absolute;right: 8px;top: 42px;" class="material-icons {% if chat.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
+                        {% endif %}
+                        <svg class="fixed" viewBox="0 0 24 24">
+                            <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" />
+                        </svg>
                     </div>
                 </div>
             </a>
             <hr>
-            {% empty %}
+        {% empty %}
             <p>No recent chats</p>
-            {% endfor %}
-        {% endif %}
+        {% endfor %}
     </div>
 </div>
 

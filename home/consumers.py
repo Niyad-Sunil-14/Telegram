@@ -64,9 +64,11 @@ class ChatroomConsumer(WebsocketConsumer):
         html = render_to_string("home/partials/chat_message_p.html", context=context)
         self.send(text_data=html)
         
-        # Notify all group members for left panel update with unread count
+        # Notify all group members for left panel update
         for member in self.chatroom.members.all():
             unread_count = self.chatroom.get_unread_count(member)
+            last_message = self.chatroom.get_last_message()
+            is_seen = last_message.is_seen if last_message and last_message.author == member else None
             async_to_sync(self.channel_layer.group_send)(
                 f"user_{member.id}",
                 {
@@ -75,7 +77,8 @@ class ChatroomConsumer(WebsocketConsumer):
                     'message_body': message.body,
                     'message_time': message.created.isoformat(),
                     'author_username': message.author.username,
-                    'unread_count': unread_count,  # Add unread count
+                    'unread_count': unread_count,
+                    'is_seen': is_seen,  # Add is_seen for authenticated user's message
                 }
             )
 
@@ -103,18 +106,21 @@ class ChatroomConsumer(WebsocketConsumer):
                         'message_ids': message_ids,
                     }
                 )
-                # Update unread counts for all members after marking seen
+                # Update unread counts and read receipt status for all members
                 for member in self.chatroom.members.all():
                     unread_count = self.chatroom.get_unread_count(member)
+                    last_message = self.chatroom.get_last_message()
+                    is_seen = last_message.is_seen if last_message and last_message.author == member else None
                     async_to_sync(self.channel_layer.group_send)(
                         f"user_{member.id}",
                         {
                             'type': 'notify_unread_update',
                             'chatroom_name': self.chatroom.group_name,
                             'unread_count': unread_count,
+                            'is_seen': is_seen,  # Add is_seen for authenticated user's message
                         }
                     )
-
+                    
     def seen_handler(self, event):
         self.send(text_data=json.dumps({
             'type': 'message_seen',

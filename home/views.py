@@ -64,13 +64,14 @@ def home(request, chatroom_name='public-chat'):
     MIN_DATETIME = timezone.make_aware(datetime.min, pytz.utc)
 
     for group in user_chat_groups_qs:
-        unread_count = group.get_unread_count(user)  # Calculate unread count
+        unread_count = group.get_unread_count(user)
+        last_message = group.get_last_message()
+        is_seen = last_message.is_seen if last_message and last_message.author == user else None  # Only for authenticated user
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
             if other_member:
-                private_chats[other_member.id].append((group, unread_count))
+                private_chats[other_member.id].append((group, unread_count, is_seen))
         else:
-            last_message = group.get_last_message()
             recent_chats.append({
                 'group_name': group.group_name,
                 'is_private': False,
@@ -78,12 +79,13 @@ def home(request, chatroom_name='public-chat'):
                 'display_name': group.group_name,
                 'avatar_url': '/static/avatar.svg',
                 'online_status': False,
-                'unread_count': unread_count,  # Add unread count
+                'unread_count': unread_count,
+                'is_seen': is_seen,  # Add is_seen
             })
 
     for other_member_id, group_data in private_chats.items():
         other_member = User.objects.get(id=other_member_id)
-        latest_group, unread_count = max(group_data, key=lambda g: g[0].last_message_time or MIN_DATETIME)
+        latest_group, unread_count, is_seen = max(group_data, key=lambda g: g[0].last_message_time or MIN_DATETIME)
         last_message = latest_group.get_last_message()
         display_name = other_member.name if other_member.name else other_member.username
         recent_chats.append({
@@ -94,7 +96,8 @@ def home(request, chatroom_name='public-chat'):
             'display_name': display_name,
             'avatar_url': other_member.avatar.url,
             'online_status': other_member.userprofile.online,
-            'unread_count': unread_count,  # Add unread count
+            'unread_count': unread_count,
+            'is_seen': is_seen,  # Add is_seen
         })
         
     # Sort all recent chats by last message time
@@ -208,7 +211,7 @@ def chat_view(request, chatroom_name='public-chat'):
     status = request.GET.get('status', 'False')
 
     chat_group = get_object_or_404(ChatGroup, group_name=chatroom_name)
-    chat_messages = chat_group.chat_messages.all()  # Remove [:30] limit if needed
+    chat_messages = chat_group.chat_messages.all()
     form = ChatmessageCreateForm()
 
     other_user = None
@@ -220,27 +223,24 @@ def chat_view(request, chatroom_name='public-chat'):
                 other_user = member
                 break
 
-    # Fetch all chat groups for the current user
+    # Fetch all chat groups for the current user (same as home view)
     user_chat_groups_qs = ChatGroup.objects.filter(members=user).annotate(
         last_message_time=models.Max('chat_messages__created')
     ).order_by('-last_message_time')
 
-    # Consolidate private chats by other user and include group chats
     private_chats = defaultdict(list)
     recent_chats = []
-
-    # Define a fallback aware datetime (UTC)
     MIN_DATETIME = timezone.make_aware(datetime.min, pytz.utc)
 
-    # Separate private and group chats
     for group in user_chat_groups_qs:
+        unread_count = group.get_unread_count(user)
+        last_message = group.get_last_message()
+        is_seen = last_message.is_seen if last_message and last_message.author == user else None  # Only for authenticated user
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
             if other_member:
-                private_chats[other_member.id].append(group)
+                private_chats[other_member.id].append((group, unread_count, is_seen))
         else:
-            # Add group chats directly
-            last_message = group.get_last_message()
             recent_chats.append({
                 'group_name': group.group_name,
                 'is_private': False,
@@ -248,12 +248,13 @@ def chat_view(request, chatroom_name='public-chat'):
                 'display_name': group.group_name,
                 'avatar_url': '/static/avatar.svg',
                 'online_status': False,
+                'unread_count': unread_count,
+                'is_seen': is_seen,
             })
 
-    # Process private chats: pick the most recent per user
-    for other_member_id, groups in private_chats.items():
+    for other_member_id, group_data in private_chats.items():
         other_member = User.objects.get(id=other_member_id)
-        latest_group = max(groups, key=lambda g: g.last_message_time or MIN_DATETIME)
+        latest_group, unread_count, is_seen = max(group_data, key=lambda g: g[0].last_message_time or MIN_DATETIME)
         last_message = latest_group.get_last_message()
         display_name = other_member.name if other_member.name else other_member.username
         recent_chats.append({
@@ -264,9 +265,10 @@ def chat_view(request, chatroom_name='public-chat'):
             'display_name': display_name,
             'avatar_url': other_member.avatar.url,
             'online_status': other_member.userprofile.online,
+            'unread_count': unread_count,
+            'is_seen': is_seen,
         })
 
-    # Sort all recent chats by last message time
     recent_chats.sort(
         key=lambda x: x['last_message'].created if x['last_message'] else MIN_DATETIME,
         reverse=True
