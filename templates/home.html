@@ -56,6 +56,43 @@
 <script>
     const notificationSocket = new WebSocket('ws://' + window.location.host + '/ws/user_notifications/');
 
+    // Helper function to format timestamp
+    function formatTimestamp(timestamp) {
+        const now = new Date();
+        const date = new Date(timestamp);
+        const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+        const options = { hour: 'numeric', minute: '2-digit', hour12: true };
+        const dayOptions = { weekday: 'short' };
+        const dateOptions = { month: 'short', day: 'numeric' };
+
+        if (diffDays === 0) {
+            // Today: "9:24 PM"
+            return date.toLocaleTimeString('en-US', options);
+        } else if (diffDays < 7 && date.getWeek() === now.getWeek()) {
+            // This week: "Mon", "Tues", etc.
+            return date.toLocaleDateString('en-US', dayOptions);
+        } else {
+            // Older than a week: "Mar 12", "Jan 5", etc.
+            return date.toLocaleDateString('en-US', dateOptions);
+        }
+    }
+
+    // Helper to get week number (for comparing weeks)
+    Date.prototype.getWeek = function() {
+        const date = new Date(this.getTime());
+        date.setHours(0, 0, 0, 0);
+        date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+        const week1 = new Date(date.getFullYear(), 0, 4);
+        return Math.round(((date - week1) / 86400000 + 1) / 7);
+    };
+
+    // Initial rendering of timestamps
+    document.querySelectorAll('.date[data-timestamp]').forEach(dateElement => {
+        const timestamp = dateElement.getAttribute('data-timestamp');
+        dateElement.textContent = formatTimestamp(timestamp);
+    });
+
     notificationSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
         if (data.type === 'new_message') {
@@ -69,8 +106,9 @@
         
         if (chatButton) {
             chatButton.querySelector('.message').textContent = messageBody.substring(0, 30);
-            const timeDiff = Math.floor((new Date() - new Date(messageTime)) / 60000);
-            chatButton.querySelector('.date').textContent = timeDiff < 1 ? 'Just now' : `${timeDiff} min ago`;
+            const dateElement = chatButton.querySelector('.date');
+            dateElement.textContent = formatTimestamp(messageTime);
+            dateElement.setAttribute('data-timestamp', messageTime);
             chatsContainer.insertBefore(chatButton.parentElement, chatsContainer.firstChild);
             chatsContainer.insertBefore(chatsContainer.querySelector('hr'), chatsContainer.firstChild.nextSibling);
         } else {
@@ -84,7 +122,7 @@
                         <p class="message">${messageBody.substring(0, 30)}</p>
                     </div>
                     <div class="status onTop">
-                        <p class="date">Just now</p>
+                        <p class="date" data-timestamp="${messageTime}">${formatTimestamp(messageTime)}</p>
                         <i class="material-icons read">done_all</i>
                         <svg class="fixed" viewBox="0 0 24 24">
                             <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" />

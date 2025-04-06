@@ -33,7 +33,7 @@
                     </div>
                     <div class="status onTop {% if chat.online_status %}online{% endif %}">
                         {% if chat.last_message %}
-                        <p class="date">{{ chat.last_message.created|timesince }}</p>
+                        <p class="date" data-timestamp="{{ chat.last_message.created|date:'c' }}"></p>
                         {% endif %}
                         {% if chat.unread_count > 0 %}
                         <span class="unread-count">{{ chat.unread_count }}</span>
@@ -169,6 +169,43 @@
     const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chatroom/{{ chatroom_name }}/');
     const notificationSocket = new WebSocket('ws://' + window.location.host + '/ws/user_notifications/');
 
+    // Helper function to format timestamp
+    function formatTimestamp(timestamp) {
+        const now = new Date();
+        const date = new Date(timestamp);
+        const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+        const options = { hour: 'numeric', minute: '2-digit', hour12: true };
+        const dayOptions = { weekday: 'short' };
+        const dateOptions = { month: 'short', day: 'numeric' };
+
+        if (diffDays === 0) {
+            // Today: "9:24 PM"
+            return date.toLocaleTimeString('en-US', options);
+        } else if (diffDays < 7 && date.getWeek() === now.getWeek()) {
+            // This week: "Mon", "Tues", etc.
+            return date.toLocaleDateString('en-US', dayOptions);
+        } else {
+            // Older than a week: "Mar 12", "Jan 5", etc.
+            return date.toLocaleDateString('en-US', dateOptions);
+        }
+    }
+
+    // Helper to get week number
+    Date.prototype.getWeek = function() {
+        const date = new Date(this.getTime());
+        date.setHours(0, 0, 0, 0);
+        date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+        const week1 = new Date(date.getFullYear(), 0, 4);
+        return Math.round(((date - week1) / 86400000 + 1) / 7);
+    };
+
+    // Initial rendering of timestamps
+    document.querySelectorAll('.date[data-timestamp]').forEach(dateElement => {
+        const timestamp = dateElement.getAttribute('data-timestamp');
+        dateElement.textContent = formatTimestamp(timestamp);
+    });
+
     chatSocket.onopen = function(e) {
         chatSocket.send(JSON.stringify({ 'mark_seen': true }));
     };
@@ -258,9 +295,27 @@
 
         if (existingChat) {
             existingChat.querySelector('.message').textContent = messageBody.substring(0, 30);
-            const timeDiff = Math.floor((new Date() - new Date(messageTime)) / 60000);
-            existingChat.querySelector('.date').textContent = timeDiff < 1 ? 'Just now' : `${timeDiff} min ago`;
-            updateUnreadCount(chatroomName, unreadCount, isSeen);
+            const dateElement = existingChat.querySelector('.date');
+            dateElement.textContent = formatTimestamp(messageTime);
+            dateElement.setAttribute('data-timestamp', messageTime);
+            const unreadSpan = existingChat.querySelector('.unread-count');
+            if (unreadCount > 0) {
+                if (!unreadSpan) {
+                    existingChat.querySelector('.status').insertAdjacentHTML('beforeend', `<span class="unread-count">${unreadCount}</span>`);
+                } else {
+                    unreadSpan.textContent = unreadCount;
+                }
+            } else if (unreadSpan) {
+                unreadSpan.remove();
+            }
+            const tickIcon = existingChat.querySelector('.material-icons');
+            if (isSeen !== null) {
+                if (tickIcon) {
+                    tickIcon.className = `material-icons ${isSeen ? 'blue-tick' : 'grey-tick'}`;
+                } else {
+                    existingChat.querySelector('.status').insertAdjacentHTML('beforeend', `<i class="material-icons ${isSeen ? 'blue-tick' : 'grey-tick'}" style="position: absolute;right: 8px;top: 42px;">done_all</i>`);
+                }
+            }
             chatsContainer.insertBefore(existingChat.parentElement, chatsContainer.firstChild);
             const hr = existingChat.parentElement.nextElementSibling;
             if (hr && hr.tagName === 'HR') {
@@ -277,9 +332,9 @@
                         <p class="message">${messageBody.substring(0, 30)}</p>
                     </div>
                     <div class="status onTop">
-                        <p class="date">Just now</p>
+                        <p class="date" data-timestamp="${messageTime}">${formatTimestamp(messageTime)}</p>
                         ${unreadCount > 0 ? `<span class="unread-count">${unreadCount}</span>` : ''}
-                        ${isSeen !== null ? `<i class="material-icons ${isSeen ? 'blue-tick' : 'grey-tick'}">done_all</i>` : ''}
+                        ${isSeen !== null ? `<i class="material-icons ${isSeen ? 'blue-tick' : 'grey-tick'}" style="position: absolute;right: 8px;top: 42px;">done_all</i>` : ''}
                         <svg class="fixed" viewBox="0 0 24 24">
                             <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" />
                         </svg>

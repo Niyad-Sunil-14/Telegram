@@ -586,9 +586,11 @@ div[class~="onTop"] > .count {
 
 .status .date {
 	position: absolute;
-	right: 38px;
-    top: 50px;
-	font-size: 12px;
+    right: 38px;
+    top: 49px;
+    font-size: 14px;
+    width: 65px;
+    text-align-last: end;
 }
 
 .status .read {
