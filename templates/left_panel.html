@@ -29,9 +29,6 @@
                     <div class="status onTop {% if user.userprofile.online %}online{% endif %}">
                         <p class="date"></p>
                         <i class="material-icons read">done_all</i>
-                        <svg class="fixed" viewBox="0 0 24 24">
-                            <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" />
-                        </svg>
                     </div>
                 </div>
             </a>
@@ -60,6 +57,9 @@
                         {% else %}
                         <p class="date"></p>
                         {% endif %}
+                        {% if chat.unread_count > 0 %}
+                        <span class="unread-count">{{ chat.unread_count }}</span>
+                        {% endif %}
                         <i class="material-icons read">done_all</i>
                     </div>
                 </div>
@@ -73,4 +73,3 @@
 </div>
 
 {% endblock %}
-
