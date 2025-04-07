@@ -66,7 +66,7 @@ def home(request, chatroom_name='public-chat'):
     for group in user_chat_groups_qs:
         unread_count = group.get_unread_count(user)
         last_message = group.get_last_message()
-        is_seen = last_message.is_seen if last_message and last_message.author == user else None  # Only for authenticated user
+        is_seen = last_message.is_seen if last_message and last_message.author == user else None
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
             if other_member:
@@ -80,7 +80,7 @@ def home(request, chatroom_name='public-chat'):
                 'avatar_url': '/static/avatar.svg',
                 'online_status': False,
                 'unread_count': unread_count,
-                'is_seen': is_seen,  # Add is_seen
+                'is_seen': is_seen,
             })
 
     for other_member_id, group_data in private_chats.items():
@@ -97,10 +97,9 @@ def home(request, chatroom_name='public-chat'):
             'avatar_url': other_member.avatar.url,
             'online_status': other_member.userprofile.online,
             'unread_count': unread_count,
-            'is_seen': is_seen,  # Add is_seen
+            'is_seen': is_seen,
         })
         
-    # Sort all recent chats by last message time
     recent_chats.sort(
         key=lambda x: x['last_message'].created if x['last_message'] else MIN_DATETIME,
         reverse=True
@@ -108,20 +107,19 @@ def home(request, chatroom_name='public-chat'):
 
     if request.method == "POST":
         if "search" in request.POST:
-            search = request.POST['search']
-            searched = User.objects.filter(username__icontains=search)
-            profile = User.objects.all()
-            chat_group = get_object_or_404(ChatGroup, group_name=chatroom_name)
-            last_message = chat_group.chat_messages.order_by('-created').first()
-            return render(request, 'home.html', {
-                'last_message': last_message,
-                'search': search,
-                'searched': searched,
+            search_query = request.POST['search'].strip()
+            searched_users = User.objects.filter(username__icontains=search_query).exclude(id=user.id) if search_query else None
+            context = {
                 'profile': profile,
                 'profile_img': profile_img,
                 'edit_profile': edit_profile,
+                'set_name': set_name,
                 'recent_chats': recent_chats,
-            })
+                'search_query': search_query,
+                'searched_users': searched_users,
+                'chatroom_name': chatroom_name,
+            }
+            return render(request, 'home.html', context)
         
         elif "update_profile_img" in request.POST:
             profile_img = UpdateImg(request.POST, request.FILES, instance=user)
@@ -147,6 +145,7 @@ def home(request, chatroom_name='public-chat'):
         'edit_profile': edit_profile,
         'set_name': set_name,
         'recent_chats': recent_chats,
+        'chatroom_name': chatroom_name,
     }
     return render(request, 'home.html', context)
 
@@ -223,7 +222,7 @@ def chat_view(request, chatroom_name='public-chat'):
                 other_user = member
                 break
 
-    # Fetch all chat groups for the current user (same as home view)
+    # Fetch all chat groups for the current user
     user_chat_groups_qs = ChatGroup.objects.filter(members=user).annotate(
         last_message_time=models.Max('chat_messages__created')
     ).order_by('-last_message_time')
@@ -235,7 +234,7 @@ def chat_view(request, chatroom_name='public-chat'):
     for group in user_chat_groups_qs:
         unread_count = group.get_unread_count(user)
         last_message = group.get_last_message()
-        is_seen = last_message.is_seen if last_message and last_message.author == user else None  # Only for authenticated user
+        is_seen = last_message.is_seen if last_message and last_message.author == user else None
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
             if other_member:
@@ -291,18 +290,23 @@ def chat_view(request, chatroom_name='public-chat'):
         
     if request.method == "POST":
         if "search" in request.POST:
-            search = request.POST['search']
-            searched = User.objects.filter(username__icontains=search)
-            profile = User.objects.all()
-            last_message = chat_group.chat_messages.order_by('-created').first()
-            return render(request, 'home.html', {
-                'last_message': last_message,
-                'search': search,
-                'searched': searched,
+            search_query = request.POST['search'].strip()
+            searched_users = User.objects.filter(username__icontains=search_query).exclude(id=user.id) if search_query else None
+            context = {
+                'chat_messages': chat_messages,
+                'form': form,
+                'other_user': other_user,
+                'chatroom_name': chatroom_name,
                 'profile': profile,
                 'profile_img': profile_img,
-                'edit_profile': edit_profile
-            })
+                'edit_profile': edit_profile,
+                'user_status': status,
+                'online_live': online_live,
+                'recent_chats': recent_chats,
+                'search_query': search_query,
+                'searched_users': searched_users,
+            }
+            return render(request, 'home/chat.html', context)
 
         elif "update_profile_img" in request.POST:
             profile_img = UpdateImg(request.POST, request.FILES, instance=user)

@@ -1,45 +1,45 @@
-
 {% extends 'common.html' %}
+
+{% block left_panel %}
+    {% include 'left_panel.html' %}
+{% endblock %}
 
 {% block content %}
 <!-- -------- -->
 <!-- MAIN APP -->
 <!-- -------- -->
 <section class="mainApp">
-	{% include 'left_panel.html' %}
-	
-		<h3 id="chat">Select a chat to start messaging</h3>
+    <h3 id="chat">Select a chat to start messaging</h3>
 
-		{% if request.user.name == none %}
-		<div id="name_size" class="formbold-main-wrapper">
-			<!-- Name Asking -->
-			<div class="w-full">
-			  <div class="formbold-form-wrapper" style="display: block;width: 125%;box-shadow: 1px 4px 20px 3px rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);border: none;">
-				<div class="formbold-form-header">
-				  <h3>Account Name</h3>
-				</div>
-				<form
-				  action=""
-				  method="POST"
-				  class="formbold-chatbox-form"
-				  enctype="multipart/form-data"
-				>
-				{% csrf_token %}
-				  <div class="formbold-mb-5">
-					<label for="name" class="formbold-form-label"> Set a name for your account</label>
-					<div class="formbold-form-input" style="border: 1px solid #e0e0e0; width: 93.5%;">
-					  {{set_name.name}}
-					</div>
-				  </div>
-				  <div>
-					<button name="set_name" class="formbold-btn w-full">Submit</button>
-				  </div>
-				</form>
-			  </div>
-			</div>
-		</div>
-		{% endif %}
-	
+    {% if request.user.name == none %}
+    <div id="name_size" class="formbold-main-wrapper">
+        <!-- Name Asking -->
+        <div class="w-full">
+          <div class="formbold-form-wrapper" style="display: block;width: 125%;box-shadow: 1px 4px 20px 3px rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);border: none;">
+            <div class="formbold-form-header">
+              <h3>Account Name</h3>
+            </div>
+            <form
+              action=""
+              method="POST"
+              class="formbold-chatbox-form"
+              enctype="multipart/form-data"
+            >
+            {% csrf_token %}
+              <div class="formbold-mb-5">
+                <label for="name" class="formbold-form-label"> Set a name for your account</label>
+                <div class="formbold-form-input" style="border: 1px solid #e0e0e0; width: 93.5%;">
+                  {{set_name.name}}
+                </div>
+              </div>
+              <div>
+                <button name="set_name" class="formbold-btn w-full">Submit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+    </div>
+    {% endif %}
 </section>
 
 <!-- ---------------------- -->
@@ -49,8 +49,6 @@
 <!-- MENU -->
 {% include 'overlay.html' %}
 {% endblock %}
-
-
 
 {% block javascript %}
 <script>
@@ -67,18 +65,14 @@
         const dateOptions = { month: 'short', day: 'numeric' };
 
         if (diffDays === 0) {
-            // Today: "9:24 PM"
             return date.toLocaleTimeString('en-US', options);
         } else if (diffDays < 7 && date.getWeek() === now.getWeek()) {
-            // This week: "Mon", "Tues", etc.
             return date.toLocaleDateString('en-US', dayOptions);
         } else {
-            // Older than a week: "Mar 12", "Jan 5", etc.
             return date.toLocaleDateString('en-US', dateOptions);
         }
     }
 
-    // Helper to get week number (for comparing weeks)
     Date.prototype.getWeek = function() {
         const date = new Date(this.getTime());
         date.setHours(0, 0, 0, 0);
@@ -87,7 +81,6 @@
         return Math.round(((date - week1) / 86400000 + 1) / 7);
     };
 
-    // Initial rendering of timestamps
     document.querySelectorAll('.date[data-timestamp]').forEach(dateElement => {
         const timestamp = dateElement.getAttribute('data-timestamp');
         dateElement.textContent = formatTimestamp(timestamp);

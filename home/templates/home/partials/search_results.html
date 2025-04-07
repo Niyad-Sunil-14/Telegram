@@ -1,0 +1,30 @@
+{% if search_query %}
+    {% if searched_users %}
+        <div class="search-results">
+            <h3>Search Results for "{{ search_query }}":</h3>
+            {% for searched_user in searched_users %}
+                <a href="{% url 'start-chat' searched_user.username %}">
+                    <div class="chatButton">
+                        <div class="chatInfo">
+                            <div class="">
+                                <img class="image" src="{{ searched_user.avatar.url }}" alt="">
+                            </div>
+                            <p class="name">
+                                {{ searched_user.username }}
+                            </p>
+                            {% if searched_user.userprofile.online %}
+                                <p class="message">Online</p>
+                            {% else %}
+                                <p class="message">Last seen {{ searched_user.last_seen|timesince }} ago</p>
+                            {% endif %}
+                        </div>
+                        
+                    </div>
+                </a>
+                <hr>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No users found matching "{{ search_query }}"</p>
+    {% endif %}
+{% endif %}

@@ -1447,3 +1447,37 @@ div[class~="onTop"] > .count {
 		right: 33px;
 		top: 18px;
     }
+
+
+
+
+
+
+	.search-result-item {
+		display: block;
+		padding: 8px;
+		text-decoration: none;
+		color: inherit;
+	}
+	
+	.search-result-item:hover {
+		background-color: #f5f5f5;
+	}
+	
+	.search-form {
+		margin: 10px 0;
+	}
+	.search-results {
+		padding: 10px;
+		max-height: 300px;
+		overflow-y: auto;
+		display: block; /* Ensure it takes up space */
+	}
+	
+	.chats {
+		transition: opacity 0.3s ease; /* Optional: smooth fade effect */
+	}
+	
+	.chats[style*="display: none"] {
+		opacity: 0; /* Optional: fade out when hidden */
+	}

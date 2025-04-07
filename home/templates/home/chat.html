@@ -1,6 +1,5 @@
 {% extends 'common.html' %}
 
-
 {% block left_panel %}
 <div class="leftPanel">
     <header>
@@ -9,12 +8,15 @@
                 <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" />
             </svg>
         </button>
-        <form action="" method="post">
+        <form action="" method="post" class="search-form">
             {% csrf_token %}
-            <input class="searchChats" name="search" type="search" placeholder="Search username"/>
+            <input class="searchChats" id="searchInput" name="search" type="search" 
+                   placeholder="Search username" value="{{ search_query|default:'' }}"/>
         </form>
-    </header>    
-    <div class="chats">
+    </header>
+    <!-- Include search results -->
+    {% include 'home/partials/search_results.html' %}
+    <div class="chats" id="recentChats">
         {% for chat in recent_chats %}
             <a href="{% url 'chatroom' chat.group_name %}">
                 <div class="chatButton {% if chat.group_name == chatroom_name %}active{% endif %}">
@@ -38,12 +40,10 @@
                         {% if chat.unread_count > 0 %}
                         <span class="unread-count">{{ chat.unread_count }}</span>
                         {% endif %}
-                        {% if chat.is_seen is not None %}  <!-- Only show for authenticated user's messages -->
-                        <i style="position: absolute;right: 8px;top: 42px;" class="material-icons {% if chat.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
+                        {% if chat.is_seen is not None %}
+                        <i style="position: absolute;right: 8px;top: 42px;" 
+                           class="material-icons {% if chat.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
                         {% endif %}
-                        <svg class="fixed" viewBox="0 0 24 24">
-                            <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12Z" />
-                        </svg>
                     </div>
                 </div>
             </a>
@@ -169,7 +169,6 @@
     const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chatroom/{{ chatroom_name }}/');
     const notificationSocket = new WebSocket('ws://' + window.location.host + '/ws/user_notifications/');
 
-    // Helper function to format timestamp
     function formatTimestamp(timestamp) {
         const now = new Date();
         const date = new Date(timestamp);
@@ -180,18 +179,14 @@
         const dateOptions = { month: 'short', day: 'numeric' };
 
         if (diffDays === 0) {
-            // Today: "9:24 PM"
             return date.toLocaleTimeString('en-US', options);
         } else if (diffDays < 7 && date.getWeek() === now.getWeek()) {
-            // This week: "Mon", "Tues", etc.
             return date.toLocaleDateString('en-US', dayOptions);
         } else {
-            // Older than a week: "Mar 12", "Jan 5", etc.
             return date.toLocaleDateString('en-US', dateOptions);
         }
     }
 
-    // Helper to get week number
     Date.prototype.getWeek = function() {
         const date = new Date(this.getTime());
         date.setHours(0, 0, 0, 0);
@@ -200,7 +195,6 @@
         return Math.round(((date - week1) / 86400000 + 1) / 7);
     };
 
-    // Initial rendering of timestamps
     document.querySelectorAll('.date[data-timestamp]').forEach(dateElement => {
         const timestamp = dateElement.getAttribute('data-timestamp');
         dateElement.textContent = formatTimestamp(timestamp);
