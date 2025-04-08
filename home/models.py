@@ -39,18 +39,19 @@ class ChatGroup(models.Model):
 
 
 class GroupMessage(models.Model):
-    group = models.ForeignKey(ChatGroup, on_delete=models.CASCADE, related_name='chat_messages',null=True)
+    group = models.ForeignKey(ChatGroup, on_delete=models.CASCADE, related_name='chat_messages', null=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    body = models.CharField(max_length=300)
+    body = models.CharField(max_length=300, blank=True, null=True)  # Allow blank for image-only messages
+    image = models.ImageField(upload_to='chat_images/%Y/%m/%d/', blank=True, null=True)  # New field for images
     created = models.DateTimeField(auto_now_add=True)
-    time = models.TimeField(auto_now_add=True,null=True)
-    is_seen = models.BooleanField(default=False)  # New field to track if the message is seen
+    time = models.TimeField(auto_now_add=True, null=True)
+    is_seen = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.author.username} : {self.body}'
-    
+        return f'{self.author.username} : {self.body or "Image message"}'
+
     class Meta:
-        ordering=['created']
+        ordering = ['created']
 
 
 

@@ -16,7 +16,7 @@
     <div class="chats" id="recentChats">
         {% for chat in recent_chats %}
             <a href="{% url 'chatroom' chat.group_name %}">
-                <div class="chatButton {% if chat.group_name == chatroom_name %}active{% endif %}">
+                <div class="chatButton">
                     <div class="chatInfo">
                         <div class="">
                             <img class="image" src="{{ chat.avatar_url }}" alt="">

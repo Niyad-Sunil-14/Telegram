@@ -1,37 +1,42 @@
 {% if message.author == user %}
-    <div id="message-{{ message.id }}" class="msg messageSent" style="display: block;">
-        <div class="dropdown">
-            <button id="msg_crud">
-                <i class="material-icons button">more_vert</i>
-            </button>
-            <div class="dropdown-content">
-                <div style="width: -webkit-fill-available;">
-                    <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body }}')">
-                    <img id="edit" src="/static/images/edit.png" alt="">
-                    Edit</a>
-                </div>        
-                <div style="width: -webkit-fill-available;">
-                    <a id="deletefont" onclick="showPopup('{{ message.id }}')">
-                    <img id="trash" src="/static/images/trash.png" alt="">
-                    Delete</a>
+        <div id="message-{{ message.id }}" class="msg messageSent" style="display: block;">
+            <div class="dropdown">
+                <button id="msg_crud">
+                    <i class="material-icons button">more_vert</i>
+                </button>
+                <div class="dropdown-content">
+                    <div style="width: -webkit-fill-available;">
+                        <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body|escapejs }}')">
+                        <img id="edit" src="/static/images/edit.png" alt="">
+                        Edit</a>
+                    </div>        
+                    <div style="width: -webkit-fill-available;">
+                        <a id="deletefont" onclick="showPopup('{{ message.id }}')">
+                        <img id="trash" src="/static/images/trash.png" alt="">
+                        Delete</a>
+                    </div>
                 </div>
             </div>
+            {% if message.body %}
+            <span class="message-body">{{ message.body }}</span>
+            {% endif %}
+            {% if message.image %}
+                <img src="{{ message.image.url }}" alt="Chat Image" style="max-width: 200px; margin-top: 5px;" />
+            {% endif %}
+            <i class="material-icons {% if message.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
+            <span class="timestamp">{{ message.time }}</span>
         </div>
-
-        <form action="" method="post">
-            {% csrf_token %}
-        </form>
-
-        <span class="message-body">{{ message.body }}</span>
-        <i class="material-icons {% if message.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
-        <span class="timestamp">{{ message.time }}</span>
-    </div>
-{% else %}
-    <div id="message-{{ message.id }}" class="msg messageReceived">
-        <span class="message-body">{{ message.body }}</span>
-        <span class="timestamp">{{ message.time }}</span>
-    </div>
-{% endif %}
+        {% else %}
+        <div id="message-{{ message.id }}" class="msg messageReceived">
+            {% if message.body %}
+            <span class="message-body">{{ message.body }}</span>
+            {% endif %}
+            {% if message.image %}
+            <img src="{{ message.image.url }}" alt="Chat Image" style="max-width: 200px; margin-top: 5px;" />
+            {% endif %}
+            <span class="timestamp">{{ message.time }}</span>
+        </div>
+        {% endif %}
 
 <!-- Delete pop-up model and script -->
 <div id="deleteModal" class="modal">

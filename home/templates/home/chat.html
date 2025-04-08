@@ -97,19 +97,18 @@
     </div>
     
     <div class="replyBar">
-        <button class="attach">
+        <button class="attach" id="attachImage">
             <i class="material-icons d45">attach_file</i>
         </button>
-        
-         
+        <input type="file" id="imageInput" style="display: none;" accept="image/*" />
+    
         <form id="chat_message_form" 
-                hx-ext="ws"
-                ws-connect="/ws/chatroom/{{ chatroom_name }}"
-                ws-send
-                _="on htmx:wsAfterSend reset() me"
-                >
+              hx-ext="ws"
+              ws-connect="/ws/chatroom/{{ chatroom_name }}"
+              ws-send
+              _="on htmx:wsAfterSend reset() me">
             {% csrf_token %}
-            {{form}}
+            {{ form.body }}  <!-- Only render the body field -->
         </form>
 
         <div class="emojiBar">
@@ -165,6 +164,37 @@
         container.scrollTop = container.scrollHeight;
     }
     scrollToBottom();
+
+        // Handle image upload via AJAX
+    document.getElementById('attachImage').addEventListener('click', function() {
+        document.getElementById('imageInput').click();
+    });
+
+    document.getElementById('imageInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const formData = new FormData();
+            const messageInput = document.querySelector('#chat_message_form input[name="body"]');
+            formData.append('body', messageInput.value.trim());
+            formData.append('image', file);
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+            fetch('/upload-image/{{ chatroom_name }}', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    messageInput.value = '';  // Clear text input
+                    e.target.value = '';      // Clear file input
+                } else {
+                    console.error('Upload failed:', data.error);
+                }
+            })
+            .catch(error => console.error('Error uploading image:', error));
+        }
+    });
 
     const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chatroom/{{ chatroom_name }}/');
     const notificationSocket = new WebSocket('ws://' + window.location.host + '/ws/user_notifications/');

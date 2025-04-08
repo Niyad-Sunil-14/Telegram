@@ -1,5 +1,4 @@
 <div id="chat_messages" hx-swap-oob="beforeend">
-
     <div class="fade-in-up">
         {% if message.author == user %}
         <div id="message-{{ message.id }}" class="msg messageSent" style="display: block;">
@@ -20,28 +19,37 @@
                     </div>
                 </div>
             </div>
+            {% if message.body %}
             <span class="message-body">{{ message.body }}</span>
+            {% endif %}
+            {% if message.image %}
+                <img src="{{ message.image.url }}" alt="Chat Image" style="max-width: 200px; margin-top: 5px;" />
+            {% endif %}
             <i class="material-icons {% if message.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
             <span class="timestamp">{{ message.time }}</span>
         </div>
-    {% else %}
+        {% else %}
         <div id="message-{{ message.id }}" class="msg messageReceived">
+            {% if message.body %}
             <span class="message-body">{{ message.body }}</span>
+            {% endif %}
+            {% if message.image %}
+            <img src="{{ message.image.url }}" alt="Chat Image" style="max-width: 200px; margin-top: 5px;" />
+            {% endif %}
             <span class="timestamp">{{ message.time }}</span>
         </div>
-    {% endif %}
+        {% endif %}
     </div>
     
     <style>
-        @keyframes fadeInAndUp{
-            from {opacity: 0;transform: translateY(12px);}
-            to {opacity: 1;transform: translateY(0px);}
+        @keyframes fadeInAndUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0px); }
         }
-        .fade-in-up{
+        .fade-in-up {
             animation: fadeInAndUp 0.6s ease;
         }
     </style>
     
     <script>scrollToBottom()</script>
-    
-    </div>
+</div>

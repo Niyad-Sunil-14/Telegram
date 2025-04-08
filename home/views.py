@@ -13,6 +13,7 @@ from collections import defaultdict
 from django.utils import timezone  # Correct import for timezone utilities
 from datetime import datetime  # Standard datetime module
 import pytz  # For UTC timezone
+from channels.layers import get_channel_layer
 
 @csrf_exempt
 @login_required
@@ -67,6 +68,13 @@ def home(request, chatroom_name='public-chat'):
         unread_count = group.get_unread_count(user)
         last_message = group.get_last_message()
         is_seen = last_message.is_seen if last_message and last_message.author == user else None
+        # Customize last_message display
+        if last_message and not last_message.body and last_message.image:
+            if last_message.author == user:  # Sender
+                last_message.body = "You sent a photo"
+            else:  # Receiver
+                last_message.body = "Sent you a photo"
+        
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
             if other_member:
@@ -87,6 +95,11 @@ def home(request, chatroom_name='public-chat'):
         other_member = User.objects.get(id=other_member_id)
         latest_group, unread_count, is_seen = max(group_data, key=lambda g: g[0].last_message_time or MIN_DATETIME)
         last_message = latest_group.get_last_message()
+        if last_message and not last_message.body and last_message.image:
+            if last_message.author == user:  # Sender
+                last_message.body = "You sent a photo"
+            else:  # Receiver
+                last_message.body = "Sent you a photo"
         display_name = other_member.name if other_member.name else other_member.username
         recent_chats.append({
             'group_name': latest_group.group_name,
@@ -235,6 +248,13 @@ def chat_view(request, chatroom_name='public-chat'):
         unread_count = group.get_unread_count(user)
         last_message = group.get_last_message()
         is_seen = last_message.is_seen if last_message and last_message.author == user else None
+        # Customize last_message display
+        if last_message and not last_message.body and last_message.image:
+            if last_message.author == user:  # Sender
+                last_message.body = "You sent a photo"
+            else:  # Receiver
+                last_message.body = "Sent you a photo"
+        
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
             if other_member:
@@ -255,6 +275,11 @@ def chat_view(request, chatroom_name='public-chat'):
         other_member = User.objects.get(id=other_member_id)
         latest_group, unread_count, is_seen = max(group_data, key=lambda g: g[0].last_message_time or MIN_DATETIME)
         last_message = latest_group.get_last_message()
+        if last_message and not last_message.body and last_message.image:
+            if last_message.author == user:  # Sender
+                last_message.body = "You sent a photo"
+            else:  # Receiver
+                last_message.body = "Sent you a photo"
         display_name = other_member.name if other_member.name else other_member.username
         recent_chats.append({
             'group_name': latest_group.group_name,
@@ -376,3 +401,27 @@ def update_message(request, message_id):
     
     return JsonResponse({"success": False, "error": "Invalid request method"})
 
+
+@login_required
+def upload_chat_image(request, chatroom_name):
+    if request.method == "POST":
+        chat_group = get_object_or_404(ChatGroup, group_name=chatroom_name)
+        form = ChatmessageCreateForm(request.POST, request.FILES)
+        if form.is_valid():
+            message = form.save(commit=False)
+            message.author = request.user
+            message.group = chat_group
+            message.save()
+
+            # Broadcast the new message via WebSocket
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                chatroom_name,
+                {
+                    'type': 'message_handler',
+                    'message_id': message.id,
+                }
+            )
+            return JsonResponse({'success': True, 'message_id': message.id})
+        return JsonResponse({'success': False, 'error': 'Invalid form'})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})

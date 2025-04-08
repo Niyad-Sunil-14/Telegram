@@ -14,45 +14,32 @@ class ChatroomConsumer(WebsocketConsumer):
         self.user = self.scope['user']
         self.chatroom_name = self.scope['url_route']['kwargs']['chatroom_name']
         self.chatroom = get_object_or_404(ChatGroup, group_name=self.chatroom_name)
-
-        async_to_sync(self.channel_layer.group_add)(
-            self.chatroom_name,
-            self.channel_name
-        )
+        async_to_sync(self.channel_layer.group_add)(self.chatroom_name, self.channel_name)
         self.accept()
-
         if self.user.is_authenticated:
             self.mark_messages_as_seen()
 
     def disconnect(self, close_code):
-        async_to_sync(self.channel_layer.group_discard)(
-            self.chatroom_name,
-            self.channel_name
-        )
+        async_to_sync(self.channel_layer.group_discard)(self.chatroom_name, self.channel_name)
 
-    def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        
-        if 'type' in text_data_json and text_data_json['type'] == 'ping':
-            return
-            
-        if 'body' in text_data_json:
-            body = text_data_json['body']
-            message = GroupMessage.objects.create(
-                body=body,
-                author=self.user,
-                group=self.chatroom,
-            )
-            async_to_sync(self.channel_layer.group_send)(
-                self.chatroom_name,
-                {
-                    'type': 'message_handler',
-                    'message_id': message.id,
-                }
-            )
-        
-        elif 'mark_seen' in text_data_json and text_data_json['mark_seen']:
-            self.mark_messages_as_seen()
+    def receive(self, text_data=None, bytes_data=None):
+        if text_data:
+            text_data_json = json.loads(text_data)
+            if 'type' in text_data_json and text_data_json['type'] == 'ping':
+                return
+            if 'mark_seen' in text_data_json and text_data_json['mark_seen']:
+                self.mark_messages_as_seen()
+            elif 'body' in text_data_json:  # Only handle text via WebSocket
+                body = text_data_json.get('body', '')
+                message = GroupMessage.objects.create(
+                    body=body,
+                    author=self.user,
+                    group=self.chatroom,
+                )
+                async_to_sync(self.channel_layer.group_send)(
+                    self.chatroom_name,
+                    {'type': 'message_handler', 'message_id': message.id}
+                )
 
     def message_handler(self, event):
         message_id = event['message_id']
@@ -60,30 +47,40 @@ class ChatroomConsumer(WebsocketConsumer):
         context = {
             'message': message,
             'user': self.user,
+            'chatroom_name': self.chatroom_name,
         }
         html = render_to_string("home/partials/chat_message_p.html", context=context)
         self.send(text_data=html)
-        
-        # Notify all group members for left panel update
+
+        # Notify group members for left panel update
         for member in self.chatroom.members.all():
             unread_count = self.chatroom.get_unread_count(member)
             last_message = self.chatroom.get_last_message()
             is_seen = last_message.is_seen if last_message and last_message.author == member else None
+            
+            # Customize display body based on sender vs receiver
+            display_body = message.body
+            if not message.body and message.image:
+                if member == message.author:  # Sender
+                    display_body = "You sent a photo"
+                else:  # Receiver
+                    display_body = "Sent you a photo"
+            
             async_to_sync(self.channel_layer.group_send)(
                 f"user_{member.id}",
                 {
                     'type': 'notify_new_message',
                     'chatroom_name': self.chatroom.group_name,
-                    'message_body': message.body,
+                    'message_body': display_body,
                     'message_time': message.created.isoformat(),
                     'author_username': message.author.username,
                     'unread_count': unread_count,
-                    'is_seen': is_seen,  # Add is_seen for authenticated user's message
+                    'is_seen': is_seen,
                 }
             )
-
         if self.user != message.author:
             self.mark_messages_as_seen()
+
 
     def mark_messages_as_seen(self):
         unseen_messages = GroupMessage.objects.filter(

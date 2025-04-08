@@ -20,20 +20,25 @@ class SetName(ModelForm):
 
 
 class ChatmessageCreateForm(ModelForm):
+    image = forms.ImageField(required=False, widget=forms.FileInput(attrs={'accept': 'image/*'}))  # Add image field
+
     class Meta:
-        model=GroupMessage
-        fields=['body']
-        widgets={
-            'body':forms.TextInput(attrs={'placeholder':'Add message...',
-                                          'class':'p-4 text-black',
-                                          'maxlength':'300',
-                                          'name':'body',
-                                          'autofocus':True}),
+        model = GroupMessage
+        fields = ['body', 'image']  # Include image field
+        widgets = {
+            'body': forms.TextInput(attrs={
+                'placeholder': 'Add message...',
+                'class': 'p-4 text-black',
+                'maxlength': '300',
+                'name': 'body',
+                'autofocus': True
+            }),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['body'].label = ''  # Remove the label for 'body' field
+        self.fields['body'].label = ''
+        self.fields['image'].label = ''
 
 
 class EditMessage(ModelForm):
