@@ -69,6 +69,14 @@ def home(request, chatroom_name='public-chat'):
                         last_message.body = "You sent a photo"
                     else:
                         last_message.body = "Sent you a photo"
+            elif last_message.audio:
+                if last_message.body:
+                    last_message.body = f"🎙️: {last_message.body}"
+                else:
+                    if last_message.author == user:
+                        last_message.body = "You sent a voice message"
+                    else:
+                        last_message.body = "Sent you a voice message"
         
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
@@ -99,6 +107,14 @@ def home(request, chatroom_name='public-chat'):
                         last_message.body = "You sent a photo"
                     else:
                         last_message.body = "Sent you a photo"
+            elif last_message.audio:
+                if last_message.body:
+                    last_message.body = f"🎙️: {last_message.body}"
+                else:
+                    if last_message.author == user:
+                        last_message.body = "You sent a voice message"
+                    else:
+                        last_message.body = "Sent you a voice message"
         display_name = other_member.name if other_member.name else other_member.username
         recent_chats.append({
             'group_name': latest_group.group_name,
@@ -255,6 +271,14 @@ def chat_view(request, chatroom_name='public-chat'):
                         last_message.body = "You sent a photo"
                     else:
                         last_message.body = "Sent you a photo"
+            elif last_message.audio:
+                if last_message.body:
+                    last_message.body = f"🎙️: {last_message.body}"
+                else:
+                    if last_message.author == user:
+                        last_message.body = "You sent a voice message"
+                    else:
+                        last_message.body = "Sent you a voice message"
         
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
@@ -285,6 +309,14 @@ def chat_view(request, chatroom_name='public-chat'):
                         last_message.body = "You sent a photo"
                     else:
                         last_message.body = "Sent you a photo"
+            elif last_message.audio:
+                if last_message.body:
+                    last_message.body = f"🎙️: {last_message.body}"
+                else:
+                    if last_message.author == user:
+                        last_message.body = "You sent a voice message"
+                    else:
+                        last_message.body = "Sent you a voice message"
         display_name = other_member.name if other_member.name else other_member.username
         recent_chats.append({
             'group_name': latest_group.group_name,
@@ -405,6 +437,29 @@ def update_message(request, message_id):
 
 @login_required
 def upload_chat_image(request, chatroom_name):
+    if request.method == "POST":
+        chat_group = get_object_or_404(ChatGroup, group_name=chatroom_name)
+        form = ChatmessageCreateForm(request.POST, request.FILES)
+        if form.is_valid():
+            message = form.save(commit=False)
+            message.author = request.user
+            message.group = chat_group
+            message.save()
+
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                chatroom_name,
+                {
+                    'type': 'message_handler',
+                    'message_id': message.id,
+                }
+            )
+            return JsonResponse({'success': True, 'message_id': message.id})
+        return JsonResponse({'success': False, 'error': form.errors.as_json()})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@login_required
+def upload_chat_audio(request, chatroom_name):
     if request.method == "POST":
         chat_group = get_object_or_404(ChatGroup, group_name=chatroom_name)
         form = ChatmessageCreateForm(request.POST, request.FILES)

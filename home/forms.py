@@ -1,12 +1,11 @@
 from .models import User, ChatGroup, GroupMessage
 from django import forms
 from django.forms import ModelForm
-  
-class UpdateImg(ModelForm):  
-    class Meta:  
-        model = User  
-        fields = ['avatar']
 
+class UpdateImg(ModelForm):
+    class Meta:
+        model = User
+        fields = ['avatar']
 
 class EditProfile(ModelForm):
     class Meta:
@@ -18,13 +17,13 @@ class SetName(ModelForm):
         model = User
         fields = ['name']
 
-
 class ChatmessageCreateForm(ModelForm):
     image = forms.ImageField(required=False, widget=forms.FileInput(attrs={'accept': 'image/*', 'id': 'imageInput'}))
+    audio = forms.FileField(required=False, widget=forms.FileInput(attrs={'accept': 'audio/*', 'id': 'audioInput'}))
 
     class Meta:
         model = GroupMessage
-        fields = ['body', 'image']
+        fields = ['body', 'image', 'audio']
         widgets = {
             'body': forms.TextInput(attrs={
                 'placeholder': 'Add message...',
@@ -39,7 +38,7 @@ class ChatmessageCreateForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['body'].label = ''
         self.fields['image'].label = ''
-
+        self.fields['audio'].label = ''
 
 class EditMessage(ModelForm):
     class Meta:

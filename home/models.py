@@ -41,13 +41,16 @@ class ChatGroup(models.Model):
 class GroupMessage(models.Model):
     group = models.ForeignKey(ChatGroup, on_delete=models.CASCADE, related_name='chat_messages', null=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    body = models.CharField(max_length=300, blank=True, null=True)  # Allow blank for image-only messages
-    image = models.ImageField(upload_to='chat_images/%Y/%m/%d/', blank=True, null=True)  # New field for images
+    body = models.CharField(max_length=300, blank=True, null=True)
+    image = models.ImageField(upload_to='chat_images/%Y/%m/%d/', blank=True, null=True)
+    audio = models.FileField(upload_to='chat_audio/%Y/%m/%d/', blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     time = models.TimeField(auto_now_add=True, null=True)
     is_seen = models.BooleanField(default=False)
 
     def __str__(self):
+        if self.audio:
+            return f'{self.author.username} : Audio message'
         return f'{self.author.username} : {self.body or "Image message"}'
 
     class Meta:

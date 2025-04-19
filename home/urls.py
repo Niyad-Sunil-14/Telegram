@@ -34,4 +34,6 @@ urlpatterns = [
     path('message/update/<int:message_id>/', views.update_message, name='update_message'),
 
     path('upload-image/<chatroom_name>', views.upload_chat_image, name='upload_chat_image'),  # New endpoint
+    path('upload-audio/<str:chatroom_name>', views.upload_chat_audio, name='upload_chat_audio'),
+
 ]

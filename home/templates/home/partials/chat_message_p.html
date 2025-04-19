@@ -1,7 +1,7 @@
 <div id="chat_messages" hx-swap-oob="beforeend">
     <div class="fade-in-up">
         {% if message.author == user %}
-        <div id="message-{{ message.id }}" class="msg messageSent {% if message.image %}image-message{% endif %}" style="display: block;">
+        <div id="message-{{ message.id }}" class="msg messageSent {% if message.image %}image-message{% elif message.audio %}audio-message{% endif %}" style="display: block;">
             {% if message.image %}
                 <div class="image-container">
                     <div class="dropdown image-dropdown">
@@ -24,6 +24,25 @@
                     <img src="{{ message.image.url }}" alt="Chat Image" class="chat-image" />
                     {% if message.body %}
                     <span class="message-body image-caption">{{ message.body }}</span>
+                    {% endif %}
+                </div>
+            {% elif message.audio %}
+                <div class="audio-container">
+                    <div class="dropdown audio-dropdown">
+                        <button id="msg_crud">
+                            <i class="material-icons button">more_vert</i>
+                        </button>
+                        <div class="dropdown-content">
+                            <div style="width: -webkit-fill-available;">
+                                <a id="deletefont" onclick="showPopup('{{ message.id }}')">
+                                <img id="trash" src="/static/images/trash.png" alt="">
+                                Delete</a>
+                            </div>
+                        </div>
+                    </div>
+                    <audio controls src="{{ message.audio.url }}" class="chat-audio"></audio>
+                    {% if message.body %}
+                    <span class="message-body audio-caption">{{ message.body }}</span>
                     {% endif %}
                 </div>
             {% else %}
@@ -52,12 +71,19 @@
             <span class="timestamp">{{ message.time }}</span>
         </div>
         {% else %}
-        <div id="message-{{ message.id }}" class="msg messageReceived {% if message.image %}image-message{% endif %}">
+        <div id="message-{{ message.id }}" class="msg messageReceived {% if message.image %}image-message{% elif message.audio %}audio-message{% endif %}">
             {% if message.image %}
                 <div class="image-container">
                     <img src="{{ message.image.url }}" alt="Chat Image" class="chat-image" />
                     {% if message.body %}
                     <span class="message-body image-caption">{{ message.body }}</span>
+                    {% endif %}
+                </div>
+            {% elif message.audio %}
+                <div class="audio-container">
+                    <audio controls src="{{ message.audio.url }}" class="chat-audio"></audio>
+                    {% if message.body %}
+                    <span class="message-body audio-caption">{{ message.body }}</span>
                     {% endif %}
                 </div>
             {% else %}
@@ -77,7 +103,20 @@
         }
         .fade-in-up {
             animation: fadeInAndUp 0.6s ease;
-        }    
+        }
+        .audio-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .chat-audio {
+            max-width: 200px;
+            margin: 5px 0;
+        }
+        .audio-caption {
+            font-size: 0.9em;
+            color: #555;
+        }
     </style>
     
     <script>scrollToBottom()</script>
