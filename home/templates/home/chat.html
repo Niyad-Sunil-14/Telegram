@@ -28,7 +28,7 @@
                             {{ chat.display_name }}
                         </p>
                         {% if chat.last_message %}
-                        <p class="message">{{ chat.last_message.body|truncatechars:30 }}</p>
+                        <p class="message">{{ chat.last_message.body }}</p>
                         {% else %}
                         <p class="message">No messages yet</p>
                         {% endif %}
@@ -55,12 +55,13 @@
 </div>
 {% endblock %}
 
+
 {% block right_panel %}
 <div class="rightPanel">
     <div class="topBar">
         <div class="rightSide">
             <button class="tbButton search">
-                <i class="material-icons">&#xE8B6;</i>
+                <i class="material-icons"></i>
             </button>
             <button class="tbButton otherOptions">
                 <i class="material-icons">more_vert</i>
@@ -96,19 +97,35 @@
     </div>
     </div>
     
+    <div id="imagePreview" style="display: none; position: absolute; bottom: 53px; left: 27.9%; transform: translateX(-50%); background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 10px; border: 1px solid #ddd;">
+        <div style="position: relative; display: inline-block;">
+            <img id="previewImage" src="" alt="Image Preview" style="width: 100px; height: auto; object-fit: contain; border-radius: 4px;" />
+            <button type="button" id="clearPreview" style="position: absolute; top: -10px; right: -10px; background: #ff4d4d; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px;">×</button>
+        </div>
+    </div>
+
+        <!-- Modal for enlarged image -->
+    <div id="imageModal" class="image-modal">
+        <span class="modal-close">&times;</span>
+        <img class="modal-image" id="modalImage" alt="Enlarged image">
+    </div>
+        
     <div class="replyBar">
         <button class="attach" id="attachImage">
             <i class="material-icons d45">attach_file</i>
+            <input type="file" id="imageInput" name="image" style="display: none;" accept="image/*" />
         </button>
-        <input type="file" id="imageInput" style="display: none;" accept="image/*" />
     
         <form id="chat_message_form" 
               hx-ext="ws"
               ws-connect="/ws/chatroom/{{ chatroom_name }}"
-              ws-send
-              _="on htmx:wsAfterSend reset() me">
+              method="post"
+              enctype="multipart/form-data">
             {% csrf_token %}
-            {{ form.body }}  <!-- Only render the body field -->
+            {{ form.body }}
+            <button type="submit" class="send-button">
+                <i class="material-icons">send</i>
+            </button>
         </form>
 
         <div class="emojiBar">
@@ -118,11 +135,9 @@
             <button id="panelGIFs">GIFs</button>
             </div>
             
-            
             <!-- Emoji panel -->
             <div class="emojiList">
-                <button id="smileface" class="pick">
-            </button>
+                <button id="smileface" class="pick"></button>
                 <button id="grinningface" class="pick"></button>
                 <button id="tearjoyface" class="pick"></button>
                 <button id="rofl" class="pick"></button>
@@ -132,8 +147,7 @@
             
             <!-- the best part of telegram ever: STICKERS!! -->
             <div class="stickerList">
-                <button id="smileface" class="pick">
-            </button>
+                <button id="smileface" class="pick"></button>
                 <button id="grinningface" class="pick"></button>
                 <button id="tearjoyface" class="pick"></button>
             </div>
@@ -156,7 +170,6 @@
 {% include 'overlay.html' %}
 {% endblock %}
 
-
 {% block javascript %}
 <script>
     function scrollToBottom() {
@@ -165,20 +178,21 @@
     }
     scrollToBottom();
 
-        // Handle image upload via AJAX
-    document.getElementById('attachImage').addEventListener('click', function() {
-        document.getElementById('imageInput').click();
-    });
+    // Handle form submission with text and/or image
+    document.getElementById('chat_message_form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+        const formData = new FormData(form);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-    document.getElementById('imageInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const formData = new FormData();
-            const messageInput = document.querySelector('#chat_message_form input[name="body"]');
-            formData.append('body', messageInput.value.trim());
-            formData.append('image', file);
-            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        // Include image from imageInput if selected
+        const imageInput = document.getElementById('imageInput');
+        if (imageInput.files[0]) {
+            formData.append('image', imageInput.files[0]);
+        }
 
+        // Submit only if there's text or an image
+        if (formData.get('body').trim() || formData.get('image')) {
             fetch('/upload-image/{{ chatroom_name }}', {
                 method: 'POST',
                 body: formData,
@@ -186,13 +200,71 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    messageInput.value = '';  // Clear text input
-                    e.target.value = '';      // Clear file input
+                    form.reset(); // Clear the form
+                    imageInput.value = ''; // Clear the file input
+                    document.getElementById('imagePreview').style.display = 'none'; // Hide preview
                 } else {
                     console.error('Upload failed:', data.error);
                 }
             })
-            .catch(error => console.error('Error uploading image:', error));
+            .catch(error => console.error('Error uploading:', error));
+        }
+    });
+
+    // Trigger file input when attach button is clicked
+    document.getElementById('attachImage').addEventListener('click', function() {
+        document.getElementById('imageInput').click();
+    });
+
+    // Show image preview when an image is selected
+    document.getElementById('imageInput').addEventListener('change', function() {
+        const file = this.files[0];
+        const previewDiv = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImage');
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewDiv.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            previewDiv.style.display = 'none';
+        }
+    });
+
+    // Clear image preview
+    document.getElementById('clearPreview').addEventListener('click', function() {
+        const imageInput = document.getElementById('imageInput');
+        const previewDiv = document.getElementById('imagePreview');
+        imageInput.value = ''; // Clear the file input
+        previewDiv.style.display = 'none'; // Hide the preview
+    });
+
+    // Handle image click to show in modal
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('chat-image')) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = 'flex';
+            modalImg.src = e.target.src;
+            console.log('Image clicked, modal opened with src:', e.target.src); // Debug log
+        }
+    });
+
+    // Close modal when clicking the close button
+    document.querySelector('.modal-close').addEventListener('click', function() {
+        const modal = document.getElementById('imageModal');
+        modal.style.display = 'none';
+        console.log('Modal closed via close button'); // Debug log
+    });
+
+    // Close modal when clicking outside the image
+    document.getElementById('imageModal').addEventListener('click', function(e) {
+        if (e.target === this || e.target.classList.contains('modal-image')) {
+            this.style.display = 'none';
+            console.log('Modal closed via background or image click'); // Debug log
         }
     });
 
@@ -254,7 +326,7 @@
     function updateMessageSeenStatus(messageId) {
         const messageElement = document.getElementById('message-' + messageId);
         if (messageElement) {
-            const tickIcon = messageElement.querySelector('.material-icons');
+            const tickIcon = document.getElementById('message-' + messageId).querySelector('.material-icons');
             if (tickIcon && tickIcon.classList.contains('grey-tick')) {
                 tickIcon.classList.remove('grey-tick');
                 tickIcon.classList.add('blue-tick');
@@ -318,7 +390,7 @@
         });
 
         if (existingChat) {
-            existingChat.querySelector('.message').textContent = messageBody.substring(0, 30);
+            existingChat.querySelector('.message').textContent = messageBody; // Use messageBody directly
             const dateElement = existingChat.querySelector('.date');
             dateElement.textContent = formatTimestamp(messageTime);
             dateElement.setAttribute('data-timestamp', messageTime);
@@ -353,7 +425,7 @@
                     <div class="chatInfo">
                         <div><img class="image" src="/static/avatar.svg" alt=""></div>
                         <p class="name">${authorUsername}</p>
-                        <p class="message">${messageBody.substring(0, 30)}</p>
+                        <p class="message">${messageBody}</p>
                     </div>
                     <div class="status onTop">
                         <p class="date" data-timestamp="${messageTime}">${formatTimestamp(messageTime)}</p>

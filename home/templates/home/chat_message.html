@@ -1,6 +1,8 @@
 {% if message.author == user %}
-        <div id="message-{{ message.id }}" class="msg messageSent" style="display: block;">
-            <div class="dropdown">
+<div id="message-{{ message.id }}" class="msg messageSent {% if message.image %}image-message{% endif %}" style="display: block;">
+    {% if message.image %}
+        <div class="image-container">
+            <div class="dropdown image-dropdown">
                 <button id="msg_crud">
                     <i class="material-icons button">more_vert</i>
                 </button>
@@ -17,26 +19,53 @@
                     </div>
                 </div>
             </div>
+            <img src="{{ message.image.url }}" alt="Chat Image" class="chat-image" />
             {% if message.body %}
-            <span class="message-body">{{ message.body }}</span>
+            <span class="message-body image-caption">{{ message.body }}</span>
             {% endif %}
-            {% if message.image %}
-                <img src="{{ message.image.url }}" alt="Chat Image" style="max-width: 200px; margin-top: 5px;" />
-            {% endif %}
-            <i class="material-icons {% if message.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
-            <span class="timestamp">{{ message.time }}</span>
         </div>
-        {% else %}
-        <div id="message-{{ message.id }}" class="msg messageReceived">
-            {% if message.body %}
-            <span class="message-body">{{ message.body }}</span>
-            {% endif %}
-            {% if message.image %}
-            <img src="{{ message.image.url }}" alt="Chat Image" style="max-width: 200px; margin-top: 5px;" />
-            {% endif %}
-            <span class="timestamp">{{ message.time }}</span>
+    {% else %}
+        <div class="dropdown">
+            <button id="msg_crud">
+                <i class="material-icons button">more_vert</i>
+            </button>
+            <div class="dropdown-content">
+                <div style="width: -webkit-fill-available;">
+                    <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body|escapejs }}')">
+                    <img id="edit" src="/static/images/edit.png" alt="">
+                    Edit</a>
+                </div>        
+                <div style="width: -webkit-fill-available;">
+                    <a id="deletefont" onclick="showPopup('{{ message.id }}')">
+                    <img id="trash" src="/static/images/trash.png" alt="">
+                    Delete</a>
+                </div>
+            </div>
         </div>
+        {% if message.body %}
+        <span class="message-body">{{ message.body }}</span>
         {% endif %}
+    {% endif %}
+    <i class="material-icons {% if message.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
+    <span class="timestamp">{{ message.time }}</span>
+</div>
+{% else %}
+<div id="message-{{ message.id }}" class="msg messageReceived {% if message.image %}image-message{% endif %}">
+    {% if message.image %}
+        <div class="image-container">
+            <img src="{{ message.image.url }}" alt="Chat Image" class="chat-image" />
+            {% if message.body %}
+            <span class="message-body image-caption">{{ message.body }}</span>
+            {% endif %}
+        </div>
+    {% else %}
+        {% if message.body %}
+        <span class="message-body">{{ message.body }}</span>
+        {% endif %}
+    {% endif %}
+    <span class="timestamp">{{ message.time }}</span>
+</div>
+{% endif %}
 
 <!-- Delete pop-up model and script -->
 <div id="deleteModal" class="modal">
@@ -88,8 +117,6 @@
     }
 </script>
 <!-- Delete ends -->
-
-
 
 <!-- Edit pop-up model and script -->
 <div id="editModal" class="edit-modal">
@@ -221,7 +248,6 @@
   </script>
 <!-- Edit ends -->
 
-
 <!-- EDIT JS realtime -->
 <script>
     var editSocket = new WebSocket("ws://" + window.location.host + "/ws/edit_message/");
@@ -252,8 +278,6 @@
     // ... (rest of the script remains the same)
 </script>
 <!-- EDIT ends -->
-
-
 
 <!-- DELETE JS realtime -->
 <script>
@@ -289,7 +313,7 @@
             }
         }
         
-        // Handle deleted messages - ADD THIS BLOCK
+        // Handle deleted messages
         if (data.delete_message_id) {
             var messageElement = document.getElementById("message-" + data.delete_message_id);
             if (messageElement) {
@@ -300,51 +324,3 @@
 </script>
 <!-- DELETE ends -->
 
-
-
-<style>
-  .blue-tick {
-      color: #34B7F1; /* Telegram-like blue color */
-      position: absolute;
-      bottom: 10px;
-      right: 12px;
-  }
-  .grey-tick {
-      color: #757575; /* Grey for unseen messages */
-      position: absolute;
-      bottom: 10px;
-      right: 12px;
-  }
-</style>
-
-
-
-<style>
-  .blue-tick {
-      color: #34B7F1;
-      position: absolute;
-      bottom: 10px;
-      right: 12px;
-  }
-  .grey-tick {
-      color: #757575;
-      position: absolute;
-      bottom: 10px;
-      right: 12px;
-  }
-  .chatStatus.online {
-      color: #34C759; /* Green for online */
-  }
-  .chatStatus {
-      color: #757575; /* Grey for offline */
-  }
-  .status.online {
-      background-color: #34C759; /* Green dot for online */
-  }
-  .status {
-      background-color: #757575; /* Grey dot for offline */
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-  }
-</style>

@@ -1,18 +1,18 @@
-from django.shortcuts import render,redirect,get_object_or_404
-from django.contrib.auth import authenticate,login,logout
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from . models import User,UserProfile,ChatGroup,GroupMessage
-from . forms import UpdateImg,EditProfile,SetName,ChatmessageCreateForm
+from .models import User, UserProfile, ChatGroup, GroupMessage
+from .forms import UpdateImg, EditProfile, SetName, ChatmessageCreateForm
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import Http404
 from asgiref.sync import async_to_sync
-from django.db import models  # Add this import
+from django.db import models
 from collections import defaultdict
-from django.utils import timezone  # Correct import for timezone utilities
-from datetime import datetime  # Standard datetime module
-import pytz  # For UTC timezone
+from django.utils import timezone
+from datetime import datetime
+import pytz
 from channels.layers import get_channel_layer
 
 @csrf_exempt
@@ -23,15 +23,11 @@ def update_status(request):
     user_profile.online = status
     user_profile.save()
 
-    # Broadcast the status update to all chat group members
-    from channels.layers import get_channel_layer
     channel_layer = get_channel_layer()
-    
-    # Get all chat groups the user is a member of
     chat_groups = request.user.chat_groups.all()
     for group in chat_groups:
         for member in group.members.all():
-            if member != request.user:  # Don't notify the user themselves
+            if member != request.user:
                 async_to_sync(channel_layer.group_send)(
                     f"user_{member.id}",
                     {
@@ -44,8 +40,6 @@ def update_status(request):
 
     return JsonResponse({'success': True, 'user_status': status})
 
-
-
 @login_required(login_url='login')
 def home(request, chatroom_name='public-chat'):
     profile = User.objects.all()
@@ -54,12 +48,10 @@ def home(request, chatroom_name='public-chat'):
     edit_profile = EditProfile(instance=user)
     set_name = SetName(instance=user)
 
-    # Fetch all chat groups for the current user
     user_chat_groups_qs = ChatGroup.objects.filter(members=user).annotate(
         last_message_time=models.Max('chat_messages__created')
     ).order_by('-last_message_time')
 
-    # Consolidate private chats by other user and include group chats
     private_chats = defaultdict(list)
     recent_chats = []
     MIN_DATETIME = timezone.make_aware(datetime.min, pytz.utc)
@@ -68,12 +60,15 @@ def home(request, chatroom_name='public-chat'):
         unread_count = group.get_unread_count(user)
         last_message = group.get_last_message()
         is_seen = last_message.is_seen if last_message and last_message.author == user else None
-        # Customize last_message display
-        if last_message and not last_message.body and last_message.image:
-            if last_message.author == user:  # Sender
-                last_message.body = "You sent a photo"
-            else:  # Receiver
-                last_message.body = "Sent you a photo"
+        if last_message:
+            if last_message.image:
+                if last_message.body:
+                    last_message.body = f"🖼️: {last_message.body}"
+                else:
+                    if last_message.author == user:
+                        last_message.body = "You sent a photo"
+                    else:
+                        last_message.body = "Sent you a photo"
         
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
@@ -95,11 +90,15 @@ def home(request, chatroom_name='public-chat'):
         other_member = User.objects.get(id=other_member_id)
         latest_group, unread_count, is_seen = max(group_data, key=lambda g: g[0].last_message_time or MIN_DATETIME)
         last_message = latest_group.get_last_message()
-        if last_message and not last_message.body and last_message.image:
-            if last_message.author == user:  # Sender
-                last_message.body = "You sent a photo"
-            else:  # Receiver
-                last_message.body = "Sent you a photo"
+        if last_message:
+            if last_message.image:
+                if last_message.body:
+                    last_message.body = f"🖼️: {last_message.body}"
+                else:
+                    if last_message.author == user:
+                        last_message.body = "You sent a photo"
+                    else:
+                        last_message.body = "Sent you a photo"
         display_name = other_member.name if other_member.name else other_member.username
         recent_chats.append({
             'group_name': latest_group.group_name,
@@ -235,7 +234,6 @@ def chat_view(request, chatroom_name='public-chat'):
                 other_user = member
                 break
 
-    # Fetch all chat groups for the current user
     user_chat_groups_qs = ChatGroup.objects.filter(members=user).annotate(
         last_message_time=models.Max('chat_messages__created')
     ).order_by('-last_message_time')
@@ -248,12 +246,15 @@ def chat_view(request, chatroom_name='public-chat'):
         unread_count = group.get_unread_count(user)
         last_message = group.get_last_message()
         is_seen = last_message.is_seen if last_message and last_message.author == user else None
-        # Customize last_message display
-        if last_message and not last_message.body and last_message.image:
-            if last_message.author == user:  # Sender
-                last_message.body = "You sent a photo"
-            else:  # Receiver
-                last_message.body = "Sent you a photo"
+        if last_message:
+            if last_message.image:
+                if last_message.body:
+                    last_message.body = f"🖼️: {last_message.body}"
+                else:
+                    if last_message.author == user:
+                        last_message.body = "You sent a photo"
+                    else:
+                        last_message.body = "Sent you a photo"
         
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
@@ -275,11 +276,15 @@ def chat_view(request, chatroom_name='public-chat'):
         other_member = User.objects.get(id=other_member_id)
         latest_group, unread_count, is_seen = max(group_data, key=lambda g: g[0].last_message_time or MIN_DATETIME)
         last_message = latest_group.get_last_message()
-        if last_message and not last_message.body and last_message.image:
-            if last_message.author == user:  # Sender
-                last_message.body = "You sent a photo"
-            else:  # Receiver
-                last_message.body = "Sent you a photo"
+        if last_message:
+            if last_message.image:
+                if last_message.body:
+                    last_message.body = f"🖼️: {last_message.body}"
+                else:
+                    if last_message.author == user:
+                        last_message.body = "You sent a photo"
+                    else:
+                        last_message.body = "Sent you a photo"
         display_name = other_member.name if other_member.name else other_member.username
         recent_chats.append({
             'group_name': latest_group.group_name,
@@ -368,12 +373,10 @@ def get_or_create_chatroom(request, username):
     other_user = User.objects.get(username=username)
     my_chatrooms = request.user.chat_groups.filter(is_private=True)
 
-    # Check for an existing private chat with this user
     for chatroom in my_chatrooms:
         if other_user in chatroom.members.all() and chatroom.members.count() == 2:
             return redirect('chatroom', chatroom.group_name)
 
-    # If no existing chat found, create a new one
     chatroom = ChatGroup.objects.create(is_private=True)
     chatroom.members.add(other_user, request.user)
     return redirect('chatroom', chatroom.group_name)
@@ -382,21 +385,19 @@ def get_or_create_chatroom(request, username):
 def delete_message(request, message_id):
     if request.method == "POST":
         message = get_object_or_404(GroupMessage, id=message_id, author=request.user)
-        # We'll no longer delete here, as the WebSocket will handle it
         return JsonResponse({"success": True, "message_id": message_id})
     return JsonResponse({"success": False})
 
 
-
 def update_message(request, message_id):
-    message = get_object_or_404(GroupMessage, id=message_id) # user=request.user
+    message = get_object_or_404(GroupMessage, id=message_id)
     
     if request.method == "POST":
-        new_body = request.POST.get("body")  # Changed from content to body
+        new_body = request.POST.get("body")
         if new_body:
             message.body = new_body
             message.save()
-            return JsonResponse({"success": True})  # Return success JSON response
+            return JsonResponse({"success": True})
         return JsonResponse({"success": False, "error": "No body provided"})
     
     return JsonResponse({"success": False, "error": "Invalid request method"})
@@ -413,7 +414,6 @@ def upload_chat_image(request, chatroom_name):
             message.group = chat_group
             message.save()
 
-            # Broadcast the new message via WebSocket
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
                 chatroom_name,
@@ -423,5 +423,5 @@ def upload_chat_image(request, chatroom_name):
                 }
             )
             return JsonResponse({'success': True, 'message_id': message.id})
-        return JsonResponse({'success': False, 'error': 'Invalid form'})
+        return JsonResponse({'success': False, 'error': form.errors.as_json()})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})

@@ -1,6 +1,6 @@
 from channels.generic.websocket import WebsocketConsumer
 from django.shortcuts import get_object_or_404
-from . models import *
+from .models import *
 import json
 from django.template.loader import render_to_string
 from asgiref.sync import async_to_sync
@@ -29,7 +29,7 @@ class ChatroomConsumer(WebsocketConsumer):
                 return
             if 'mark_seen' in text_data_json and text_data_json['mark_seen']:
                 self.mark_messages_as_seen()
-            elif 'body' in text_data_json:  # Only handle text via WebSocket
+            elif 'body' in text_data_json:  # Handle text via WebSocket (though we'll rely on HTTP for text+image)
                 body = text_data_json.get('body', '')
                 message = GroupMessage.objects.create(
                     body=body,
@@ -52,19 +52,21 @@ class ChatroomConsumer(WebsocketConsumer):
         html = render_to_string("home/partials/chat_message_p.html", context=context)
         self.send(text_data=html)
 
-        # Notify group members for left panel update
         for member in self.chatroom.members.all():
             unread_count = self.chatroom.get_unread_count(member)
             last_message = self.chatroom.get_last_message()
             is_seen = last_message.is_seen if last_message and last_message.author == member else None
             
-            # Customize display body based on sender vs receiver
+            # Handle display body for photo messages with or without captions
             display_body = message.body
-            if not message.body and message.image:
-                if member == message.author:  # Sender
-                    display_body = "You sent a photo"
-                else:  # Receiver
-                    display_body = "Sent you a photo"
+            if message.image:
+                if message.body:
+                    display_body = f"🖼️: {message.body}"
+                else:
+                    if member == message.author:
+                        display_body = "You sent a photo"
+                    else:
+                        display_body = "Sent you a photo"
             
             async_to_sync(self.channel_layer.group_send)(
                 f"user_{member.id}",
@@ -80,7 +82,6 @@ class ChatroomConsumer(WebsocketConsumer):
             )
         if self.user != message.author:
             self.mark_messages_as_seen()
-
 
     def mark_messages_as_seen(self):
         unseen_messages = GroupMessage.objects.filter(
@@ -103,7 +104,6 @@ class ChatroomConsumer(WebsocketConsumer):
                         'message_ids': message_ids,
                     }
                 )
-                # Update unread counts and read receipt status for all members
                 for member in self.chatroom.members.all():
                     unread_count = self.chatroom.get_unread_count(member)
                     last_message = self.chatroom.get_last_message()
@@ -114,7 +114,7 @@ class ChatroomConsumer(WebsocketConsumer):
                             'type': 'notify_unread_update',
                             'chatroom_name': self.chatroom.group_name,
                             'unread_count': unread_count,
-                            'is_seen': is_seen,  # Add is_seen for authenticated user's message
+                            'is_seen': is_seen,
                         }
                     )
                     
@@ -140,7 +140,6 @@ class EditMessageConsumer(WebsocketConsumer):
     def receive(self, text_data):
         text_data_json = json.loads(text_data)
         
-        # Handle joining the chatroom group
         if "join" in text_data_json:
             self.chatroom_name = text_data_json["join"]
             async_to_sync(self.channel_layer.group_add)(
@@ -149,47 +148,6 @@ class EditMessageConsumer(WebsocketConsumer):
             )
             return
 
-        # Handle message editing
-        message_id = text_data_json["message_id"]
-        new_body = text_data_json["body"]
-
-        try:
-            message = GroupMessage.objects.get(id=message_id, author=self.user)
-            message.body = new_body
-            message.save()
-
-            async_to_sync(self.channel_layer.group_send)(
-                f"chatroom_{message.group.group_name}",
-                {
-                    "type": "edit_message_handler",
-                    "message_id": message.id,
-                    "body": message.body
-                }
-            )
-        except GroupMessage.DoesNotExist:
-            self.send(text_data=json.dumps({"error": "Message not found or permission denied"}))
-
-    def edit_message_handler(self, event):
-        self.send(text_data=json.dumps({
-            "message_id": event["message_id"],
-            "body": event["body"]
-        }))
-
-
-
-    def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        
-        # Handle joining the chatroom group
-        if "join" in text_data_json:
-            self.chatroom_name = text_data_json["join"]
-            async_to_sync(self.channel_layer.group_add)(
-                f"chatroom_{self.chatroom_name}",
-                self.channel_name
-            )
-            return
-        
-        # Handle message editing
         if "message_id" in text_data_json and "body" in text_data_json:
             message_id = text_data_json["message_id"]
             new_body = text_data_json["body"]
@@ -210,7 +168,6 @@ class EditMessageConsumer(WebsocketConsumer):
             except GroupMessage.DoesNotExist:
                 self.send(text_data=json.dumps({"error": "Message not found or permission denied"}))
         
-        # Handle message deletion - ADD THIS BLOCK
         if "delete_message_id" in text_data_json:
             message_id = text_data_json["delete_message_id"]
             
@@ -229,7 +186,12 @@ class EditMessageConsumer(WebsocketConsumer):
             except GroupMessage.DoesNotExist:
                 self.send(text_data=json.dumps({"error": "Message not found or permission denied"}))
 
-    # Add this method to handle delete message events
+    def edit_message_handler(self, event):
+        self.send(text_data=json.dumps({
+            "message_id": event["message_id"],
+            "body": event["body"]
+        }))
+
     def delete_message_handler(self, event):
         self.send(text_data=json.dumps({
             "delete_message_id": event["message_id"]
@@ -272,7 +234,7 @@ class UserNotificationConsumer(WebsocketConsumer):
             'message_body': event['message_body'],
             'message_time': event['message_time'],
             'author_username': event['author_username'],
-            'unread_count': event['unread_count'],  # Add unread count
+            'unread_count': event['unread_count'],
         }))
 
     def notify_unread_update(self, event):

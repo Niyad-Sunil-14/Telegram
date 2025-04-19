@@ -1,4 +1,4 @@
-from . models import User,ChatGroup,GroupMessage
+from .models import User, ChatGroup, GroupMessage
 from django import forms
 from django.forms import ModelForm
   
@@ -10,21 +10,21 @@ class UpdateImg(ModelForm):
 
 class EditProfile(ModelForm):
     class Meta:
-        model=User
-        fields=['username','name','email','phone_number','bio']
+        model = User
+        fields = ['username', 'name', 'email', 'phone_number', 'bio']
 
 class SetName(ModelForm):
     class Meta:
-        model=User
-        fields=['name']
+        model = User
+        fields = ['name']
 
 
 class ChatmessageCreateForm(ModelForm):
-    image = forms.ImageField(required=False, widget=forms.FileInput(attrs={'accept': 'image/*'}))  # Add image field
+    image = forms.ImageField(required=False, widget=forms.FileInput(attrs={'accept': 'image/*', 'id': 'imageInput'}))
 
     class Meta:
         model = GroupMessage
-        fields = ['body', 'image']  # Include image field
+        fields = ['body', 'image']
         widgets = {
             'body': forms.TextInput(attrs={
                 'placeholder': 'Add message...',
@@ -43,5 +43,5 @@ class ChatmessageCreateForm(ModelForm):
 
 class EditMessage(ModelForm):
     class Meta:
-        model=GroupMessage
-        fields=['body']
+        model = GroupMessage
+        fields = ['body']
