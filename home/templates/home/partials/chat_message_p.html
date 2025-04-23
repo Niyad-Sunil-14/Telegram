@@ -34,20 +34,33 @@
                         </button>
                         <div class="dropdown-content">
                             <div style="width: -webkit-fill-available;">
+                                <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body|escapejs }}')">
+                                <img id="edit" src="/static/images/edit.png" alt="">
+                                Edit</a>
+                            </div>        
+                            <div style="width: -webkit-fill-available;">
                                 <a id="deletefont" onclick="showPopup('{{ message.id }}')">
                                 <img id="trash" src="/static/images/trash.png" alt="">
                                 Delete</a>
                             </div>
                         </div>
                     </div>
-                    <audio controls src="{{ message.audio.url }}" class="chat-audio"></audio>
+                    <!-- Custom audio player with play/pause, progress bar, and time -->
+                    <div class="custom-audio-player">
+                        <audio id="audio-{{ message.id }}" src="{{ message.audio.url }}" class="chat-audio" preload="metadata"></audio>
+                        <button class="play-pause-btn" data-audio-id="audio-{{ message.id }}">
+                            <i class="material-icons">play_arrow</i>
+                        </button>
+                        <input type="range" class="progress-bar" data-audio-id="audio-{{ message.id }}" min="0" max="100" value="0">
+                        <span class="time-display" data-audio-id="audio-{{ message.id }}">0:00 / 0:00</span>
+                    </div>
                     {% if message.body %}
                     <span class="message-body audio-caption">{{ message.body }}</span>
                     {% endif %}
                 </div>
             {% else %}
                 <div class="dropdown">
-                    <button id="msgDH_crud">
+                    <button id="msg_crud">
                         <i class="material-icons button">more_vert</i>
                     </button>
                     <div class="dropdown-content">
@@ -81,7 +94,15 @@
                 </div>
             {% elif message.audio %}
                 <div class="audio-container">
-                    <audio controls src="{{ message.audio.url }}" class="chat-audio"></audio>
+                    <!-- Custom audio player with play/pause, progress bar, and time -->
+                    <div class="custom-audio-player">
+                        <audio id="audio-{{ message.id }}" src="{{ message.audio.url }}" class="chat-audio" preload="metadata"></audio>
+                        <button class="play-pause-btn" data-audio-id="audio-{{ message.id }}">
+                            <i class="material-icons">play_arrow</i>
+                        </button>
+                        <input type="range" class="progress-bar" data-audio-id="audio-{{ message.id }}" min="0" max="100" value="0">
+                        <span class="time-display" data-audio-id="audio-{{ message.id }}">0:00 / 0:00</span>
+                    </div>
                     {% if message.body %}
                     <span class="message-body audio-caption">{{ message.body }}</span>
                     {% endif %}
@@ -103,21 +124,67 @@
         }
         .fade-in-up {
             animation: fadeInAndUp 0.6s ease;
-        }
-        .audio-container {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-        }
-        .chat-audio {
-            max-width: 200px;
-            margin: 5px 0;
-        }
-        .audio-caption {
-            font-size: 0.9em;
-            color: #555;
-        }
+        }        
     </style>
     
-    <script>scrollToBottom()</script>
+    <script>
+        scrollToBottom();
+        // JavaScript for custom audio player with progress bar and time display
+        document.querySelectorAll('.custom-audio-player').forEach(player => {
+            const audio = player.querySelector('.chat-audio');
+            const playPauseBtn = player.querySelector('.play-pause-btn');
+            const progressBar = player.querySelector('.progress-bar');
+            const timeDisplay = player.querySelector('.time-display');
+            const icon = playPauseBtn.querySelector('i');
+
+            // Format time in mm:ss
+            function formatTime(seconds) {
+                const min = Math.floor(seconds / 60);
+                const sec = Math.floor(seconds % 60);
+                return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+            }
+
+            // Update progress bar and time display
+            audio.addEventListener('loadedmetadata', () => {
+                timeDisplay.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+                progressBar.max = audio.duration;
+            });
+
+            audio.addEventListener('timeupdate', () => {
+                progressBar.value = audio.currentTime;
+                timeDisplay.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+            });
+
+            audio.addEventListener('ended', () => {
+                icon.textContent = 'play_arrow';
+                progressBar.value = 0;
+                audio.currentTime = 0;
+                timeDisplay.textContent = `${formatTime(0)} / ${formatTime(audio.duration)}`;
+            });
+
+            // Play/pause button functionality
+            playPauseBtn.addEventListener('click', () => {
+                if (audio.paused) {
+                    // Pause other audios
+                    document.querySelectorAll('.chat-audio').forEach(a => {
+                        if (a !== audio) {
+                            a.pause();
+                            const btn = a.parentElement.querySelector('.play-pause-btn');
+                            if (btn) btn.querySelector('i').textContent = 'play_arrow';
+                        }
+                    });
+                    audio.play().catch(err => console.error('Playback error:', err));
+                    icon.textContent = 'pause';
+                } else {
+                    audio.pause();
+                    icon.textContent = 'play_arrow';
+                }
+            });
+
+            // Progress bar seeking
+            progressBar.addEventListener('input', () => {
+                audio.currentTime = progressBar.value;
+            });
+        });
+    </script>
 </div>

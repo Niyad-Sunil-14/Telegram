@@ -32,13 +32,26 @@
                 </button>
                 <div class="dropdown-content">
                     <div style="width: -webkit-fill-available;">
+                        <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body|escapejs }}')">
+                        <img id="edit" src="/static/images/edit.png" alt="">
+                        Edit</a>
+                    </div>        
+                    <div style="width: -webkit-fill-available;">
                         <a id="deletefont" onclick="showPopup('{{ message.id }}')">
                         <img id="trash" src="/static/images/trash.png" alt="">
                         Delete</a>
                     </div>
                 </div>
             </div>
-            <audio controls src="{{ message.audio.url }}" class="chat-audio"></audio>
+            <!-- Custom audio player with play/pause, progress bar, and time -->
+            <div class="custom-audio-player">
+                <audio id="audio-{{ message.id }}" src="{{ message.audio.url }}" class="chat-audio" preload="metadata"></audio>
+                <button class="play-pause-btn" data-audio-id="audio-{{ message.id }}">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+                <input type="range" class="progress-bar" data-audio-id="audio-{{ message.id }}" min="0" max="100" value="0">
+                <span class="time-display" data-audio-id="audio-{{ message.id }}">0:00 / 0:00</span>
+            </div>
             {% if message.body %}
             <span class="message-body audio-caption">{{ message.body }}</span>
             {% endif %}
@@ -79,7 +92,15 @@
         </div>
     {% elif message.audio %}
         <div class="audio-container">
-            <audio controls src="{{ message.audio.url }}" class="chat-audio"></audio>
+            <!-- Custom audio player with play/pause, progress bar, and time -->
+            <div class="custom-audio-player">
+                <audio id="audio-{{ message.id }}" src="{{ message.audio.url }}" class="chat-audio" preload="metadata"></audio>
+                <button class="play-pause-btn" data-audio-id="audio-{{ message.id }}">
+                    <i class="material-icons">play_arrow</i>
+                </button>
+                <input type="range" class="progress-bar" data-audio-id="audio-{{ message.id }}" min="0" max="100" value="0">
+                <span class="time-display" data-audio-id="audio-{{ message.id }}">0:00 / 0:00</span>
+            </div>
             {% if message.body %}
             <span class="message-body audio-caption">{{ message.body }}</span>
             {% endif %}
@@ -93,7 +114,6 @@
 </div>
 {% endif %}
 
-<!-- Delete pop-up model and script -->
 <div id="deleteModal" class="modal">
     <div class="modal-overlay" onclick="hidePopup()"></div>
     <div class="modal-content">
@@ -112,11 +132,10 @@
 
     socket.onmessage = function(event) {
         var data = JSON.parse(event.data);
-
         if (data.action === "delete") {
             var messageElement = document.getElementById("message-" + data.message_id);
             if (messageElement) {
-                messageElement.remove(); // Remove message from UI
+                messageElement.remove();
             }
         }
     };
@@ -132,19 +151,15 @@
 
     function confirmDelete() {
         if (messageToDelete !== null) {
-            // Send delete request via WebSocket
             socket.send(JSON.stringify({
                 "action": "delete",
                 "message_id": messageToDelete
             }));
-
-            hidePopup(); // Close modal
+            hidePopup();
         }
     }
 </script>
-<!-- Delete ends -->
 
-<!-- Edit pop-up model and script -->
 <div id="editModal" class="edit-modal">
     <div class="edit-modal-content">
       <div class="edit-modal-header">
@@ -163,28 +178,23 @@
         </form>
       </div>
     </div>
-  </div>
-  
-  <!-- Improved Edit Modal JavaScript -->
-  <script>
+</div>
+
+<script>
     var editSocket = new WebSocket("ws://" + window.location.host + "/ws/edit_message/");
     
-    // Send a join message when connected
     editSocket.onopen = function() {
       editSocket.send(JSON.stringify({
         "join": "{{ chatroom_name }}"
       }));
     };
     
-    // Handle incoming edited messages and update the UI in real-time
     editSocket.onmessage = function(event) {
       var data = JSON.parse(event.data);
       if (data.error) {
         console.error(data.error);
         return;
       }
-      
-      // Handle edited messages
       if (data.message_id && data.body) {
         var messageElement = document.getElementById("message-" + data.message_id);
         if (messageElement) {
@@ -194,8 +204,6 @@
           }
         }
       }
-      
-      // Handle deleted messages
       if (data.delete_message_id) {
         var messageElement = document.getElementById("message-" + data.delete_message_id);
         if (messageElement) {
@@ -204,7 +212,6 @@
       }
     };
     
-    // Open the edit modal and populate form fields
     function openEditModal(id, body) {
       document.getElementById('messageId').value = id;
       document.getElementById('messageBody').value = body;
@@ -213,20 +220,16 @@
       updateCharCounter();
     }
     
-    // Close the edit modal
     function closeEditModal() {
       document.getElementById('editModal').style.display = 'none';
     }
     
-    // Update character counter
     function updateCharCounter() {
       var textarea = document.getElementById('messageBody');
       var counter = document.getElementById('charCounter');
       var length = textarea.value.length;
       var maxLength = textarea.getAttribute('maxlength');
-      
       counter.textContent = length + '/' + maxLength;
-      
       if (length > maxLength * 0.8) {
         counter.classList.add('limit');
       } else {
@@ -234,30 +237,22 @@
       }
     }
     
-    // Add event listener for textarea input
     document.getElementById('messageBody').addEventListener('input', updateCharCounter);
     
-    // Handle form submission
     document.getElementById("editMessageForm").addEventListener("submit", function(event) {
       event.preventDefault();
-      
       var messageId = document.getElementById("messageId").value;
       var body = document.getElementById("messageBody").value;
-      
       if (!body.trim()) {
-        return; // Don't submit if message is empty or just whitespace
+        return;
       }
-      
-      // Send the updated message via WebSocket
       editSocket.send(JSON.stringify({
         "message_id": messageId,
         "body": body
       }));
-      
       closeEditModal();
     });
     
-    // Close modal when clicking outside the modal content
     window.addEventListener('click', function(event) {
       var modal = document.getElementById('editModal');
       if (event.target === modal) {
@@ -265,70 +260,29 @@
       }
     });
     
-    // Add keyboard event handler to close modal with Escape key
     document.addEventListener('keydown', function(event) {
       if (event.key === 'Escape' && document.getElementById('editModal').style.display === 'flex') {
         closeEditModal();
       }
     });
-  </script>
-<!-- Edit ends -->
-
-<!-- EDIT JS realtime -->
-<script>
-    var editSocket = new WebSocket("ws://" + window.location.host + "/ws/edit_message/");
-
-    // Send a join message when connected
-    editSocket.onopen = function() {
-        editSocket.send(JSON.stringify({
-            "join": "{{ chatroom_name }}"
-        }));
-    };
-
-    // Handle incoming edited messages and update the UI in real-time
-    editSocket.onmessage = function(event) {
-        var data = JSON.parse(event.data);
-        if (data.error) {
-            console.error(data.error);
-            return;
-        }
-        var messageElement = document.getElementById("message-" + data.message_id);
-        if (messageElement) {
-            var messageBody = messageElement.querySelector(".message-body");
-            if (messageBody) {
-                messageBody.innerText = data.body; // Update message content in real-time
-            }
-        }
-    };
-
-    // ... (rest of the script remains the same)
 </script>
-<!-- EDIT ends -->
 
-<!-- DELETE JS realtime -->
 <script>
     function confirmDelete() {
         if (messageToDelete !== null) {
-            // Send WebSocket message for deletion instead of HTTP request
             editSocket.send(JSON.stringify({
                 "delete_message_id": messageToDelete
             }));
-            
-            // Hide the popup immediately (WebSocket will handle the actual removal)
             hidePopup();
         }
     }
     
-    // Add this to your existing editSocket.onmessage handler
     editSocket.onmessage = function(event) {
         var data = JSON.parse(event.data);
-        
         if (data.error) {
             console.error(data.error);
             return;
         }
-        
-        // Handle edited messages
         if (data.message_id && data.body) {
             var messageElement = document.getElementById("message-" + data.message_id);
             if (messageElement) {
@@ -338,14 +292,69 @@
                 }
             }
         }
-        
-        // Handle deleted messages
         if (data.delete_message_id) {
             var messageElement = document.getElementById("message-" + data.delete_message_id);
             if (messageElement) {
-                messageElement.remove(); // Remove the message from DOM for all users
+                messageElement.remove();
             }
         }
     };
+
+    // JavaScript for custom audio player with progress bar and time display
+    document.querySelectorAll('.custom-audio-player').forEach(player => {
+        const audio = player.querySelector('.chat-audio');
+        const playPauseBtn = player.querySelector('.play-pause-btn');
+        const progressBar = player.querySelector('.progress-bar');
+        const timeDisplay = player.querySelector('.time-display');
+        const icon = playPauseBtn.querySelector('i');
+
+        // Format time in mm:ss
+        function formatTime(seconds) {
+            const min = Math.floor(seconds / 60);
+            const sec = Math.floor(seconds % 60);
+            return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+
+        // Update progress bar and time display
+        audio.addEventListener('loadedmetadata', () => {
+            timeDisplay.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+            progressBar.max = audio.duration;
+        });
+
+        audio.addEventListener('timeupdate', () => {
+            progressBar.value = audio.currentTime;
+            timeDisplay.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+        });
+
+        audio.addEventListener('ended', () => {
+            icon.textContent = 'play_arrow';
+            progressBar.value = 0;
+            audio.currentTime = 0;
+            timeDisplay.textContent = `${formatTime(0)} / ${formatTime(audio.duration)}`;
+        });
+
+        // Play/pause button functionality
+        playPauseBtn.addEventListener('click', () => {
+            if (audio.paused) {
+                // Pause other audios
+                document.querySelectorAll('.chat-audio').forEach(a => {
+                    if (a !== audio) {
+                        a.pause();
+                        const btn = a.parentElement.querySelector('.play-pause-btn');
+                        if (btn) btn.querySelector('i').textContent = 'play_arrow';
+                    }
+                });
+                audio.play().catch(err => console.error('Playback error:', err));
+                icon.textContent = 'pause';
+            } else {
+                audio.pause();
+                icon.textContent = 'play_arrow';
+            }
+        });
+
+        // Progress bar seeking
+        progressBar.addEventListener('input', () => {
+            audio.currentTime = progressBar.value;
+        });
+    });
 </script>
-<!-- DELETE ends -->

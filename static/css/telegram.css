@@ -1496,7 +1496,6 @@ div[class~="onTop"] > .count {
 		border-radius: 50%;
 	}
 	.image-message {
-		background-color: #effdde;
 		border-radius: 12px;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 		padding: 6px;
@@ -1591,4 +1590,69 @@ div[class~="onTop"] > .count {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 200px; /* Adjust based on your design */
+}
+
+.custom-audio-player {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 250px;
+}
+.chat-audio {
+	display: none; /* Hide default audio controls */
+}
+.play-pause-btn {
+	background: #007bff;
+	border: none;
+	border-radius: 50%;
+	width: 40px;
+	height: 40px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: white;
+	font-size: 20px;
+	transition: background 0.2s;
+}
+.play-pause-btn:hover {
+	background: #0056b3;
+}
+.progress-bar {
+	flex: 1;
+	height: 5px;
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
+	background: #ddd;
+	border-radius: 5px;
+}
+.progress-bar::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 12px;
+	height: 12px;
+	background: #007bff;
+	border-radius: 50%;
+	cursor: pointer;
+}
+.progress-bar::-moz-range-thumb {
+	width: 12px;
+	height: 12px;
+	background: #007bff;
+	border-radius: 50%;
+	cursor: pointer;
+}
+.time-display {
+	min-width: 60px;
+	text-align: right;
+}
+.audio-container {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 5px;
+}
+.audio-caption {
+	align-self: start;
 }

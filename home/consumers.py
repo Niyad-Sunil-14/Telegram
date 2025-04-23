@@ -55,25 +55,11 @@ class ChatroomConsumer(WebsocketConsumer):
             unread_count = self.chatroom.get_unread_count(member)
             last_message = self.chatroom.get_last_message()
             is_seen = last_message.is_seen if last_message and last_message.author == member else None
-            
             display_body = message.body
             if message.image:
-                if message.body:
-                    display_body = f"🖼️: {message.body}"
-                else:
-                    if member == message.author:
-                        display_body = "You sent a photo"
-                    else:
-                        display_body = "Sent you a photo"
+                display_body = f"🖼️: {message.body}" if message.body else ("You sent a photo" if member == message.author else "Sent you a photo")
             elif message.audio:
-                if message.body:
-                    display_body = f"🎙️: {message.body}"
-                else:
-                    if member == message.author:
-                        display_body = "You sent a voice message"
-                    else:
-                        display_body = "Sent you a voice message"
-            
+                display_body = f"🎙️: {message.body}" if message.body else ("You sent a voice message" if member == message.author else "Sent you a voice message")
             async_to_sync(self.channel_layer.group_send)(
                 f"user_{member.id}",
                 {
@@ -94,14 +80,12 @@ class ChatroomConsumer(WebsocketConsumer):
             group=self.chatroom,
             is_seen=False
         ).exclude(author=self.user)
-
         if unseen_messages.exists():
             message_ids = []
             for message in unseen_messages:
                 message.is_seen = True
                 message.save()
                 message_ids.append(message.id)
-
             if message_ids:
                 async_to_sync(self.channel_layer.group_send)(
                     self.chatroom_name,
@@ -134,10 +118,6 @@ class EditMessageConsumer(WebsocketConsumer):
     def connect(self):
         self.user = self.scope['user']
         self.chatroom_name = None
-        async_to_sync(self.channel_layer.group_add)(
-            f"user_{self.user.id}",
-            self.channel_name
-        )
         self.accept()
 
     def disconnect(self, close_code):
@@ -146,14 +126,9 @@ class EditMessageConsumer(WebsocketConsumer):
                 f"chatroom_{self.chatroom_name}",
                 self.channel_name
             )
-        async_to_sync(self.channel_layer.group_discard)(
-            f"user_{self.user.id}",
-            self.channel_name
-        )
 
     def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        
         if "join" in text_data_json:
             self.chatroom_name = text_data_json["join"]
             async_to_sync(self.channel_layer.group_add)(
@@ -161,16 +136,13 @@ class EditMessageConsumer(WebsocketConsumer):
                 self.channel_name
             )
             return
-
         if "message_id" in text_data_json and "body" in text_data_json:
             message_id = text_data_json["message_id"]
             new_body = text_data_json["body"]
-            
             try:
                 message = GroupMessage.objects.get(id=message_id, author=self.user)
                 message.body = new_body
                 message.save()
-
                 async_to_sync(self.channel_layer.group_send)(
                     f"chatroom_{message.group.group_name}",
                     {
@@ -181,20 +153,17 @@ class EditMessageConsumer(WebsocketConsumer):
                 )
             except GroupMessage.DoesNotExist:
                 self.send(text_data=json.dumps({"error": "Message not found or permission denied"}))
-        
         if "delete_message_id" in text_data_json:
             message_id = text_data_json["delete_message_id"]
-            
             try:
                 message = GroupMessage.objects.get(id=message_id, author=self.user)
                 group_name = message.group.group_name
                 message.delete()
-                
                 async_to_sync(self.channel_layer.group_send)(
                     f"chatroom_{group_name}",
                     {
                         "type": "delete_message_handler",
-                        "delete_message_id": message_id
+                        "message_id": message_id
                     }
                 )
             except GroupMessage.DoesNotExist:
@@ -208,7 +177,7 @@ class EditMessageConsumer(WebsocketConsumer):
 
     def delete_message_handler(self, event):
         self.send(text_data=json.dumps({
-            "delete_message_id": event["delete_message_id"]
+            "delete_message_id": event["message_id"]
         }))
 
 class UserNotificationConsumer(WebsocketConsumer):
@@ -217,7 +186,6 @@ class UserNotificationConsumer(WebsocketConsumer):
         if not self.user.is_authenticated:
             self.close()
             return
-        
         self.user_group_name = f"user_{self.user.id}"
         async_to_sync(self.channel_layer.group_add)(
             self.user_group_name,
@@ -248,7 +216,6 @@ class UserNotificationConsumer(WebsocketConsumer):
             'message_time': event['message_time'],
             'author_username': event['author_username'],
             'unread_count': event['unread_count'],
-            'is_seen': event['is_seen'],
         }))
 
     def notify_unread_update(self, event):
@@ -256,5 +223,4 @@ class UserNotificationConsumer(WebsocketConsumer):
             'type': 'unread_update',
             'chatroom_name': event['chatroom_name'],
             'unread_count': event['unread_count'],
-            'is_seen': event['is_seen'],
         }))

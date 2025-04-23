@@ -1,11 +1,9 @@
 from django.urls import path
-from . consumers import *
+from .consumers import *
 from django.urls import re_path
 
-
-websocket_urlpatterns=[
-    path("ws/chatroom/<chatroom_name>",ChatroomConsumer.as_asgi()),
-    re_path(r"ws/edit_message/$", EditMessageConsumer.as_asgi()),  # Separate WebSocket for editing
-    path("ws/user_notifications/", UserNotificationConsumer.as_asgi()),  # New endpoint
-
+websocket_urlpatterns = [
+    path("ws/chatroom/<chatroom_name>", ChatroomConsumer.as_asgi()),
+    re_path(r"ws/edit_message/$", EditMessageConsumer.as_asgi()),
+    path("ws/user_notifications/", UserNotificationConsumer.as_asgi()),
 ]

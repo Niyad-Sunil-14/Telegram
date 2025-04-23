@@ -14,7 +14,6 @@
                    placeholder="Search username" value="{{ search_query|default:'' }}"/>
         </form>
     </header>
-    <!-- Include search results -->
     {% include 'home/partials/search_results.html' %}
     <div class="chats" id="recentChats">
         {% for chat in recent_chats %}
@@ -82,12 +81,10 @@
                 {% endif %}
             </p>
         </div>
-        
     </div>
     
     <div>
     <div class="convHistory userBg" id="chat_container">
-        <!-- CONVERSATION GOES HERE! -->
         <div id="chat_messages" style="display: contents;">
             {% for message in chat_messages %}
                 {% include 'home/chat_message.html' with chatroom_name=chatroom_name %}
@@ -103,9 +100,16 @@
         </div>
     </div>
 
-    <!-- Modal for enlarged image -->
+    <!-- Added: Audio preview section -->
+    <div id="audioPreview" style="display: none; position: absolute; bottom: 53px; left: 27.9%; transform: translateX(-50%); background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 10px; border: 1px solid #ddd;">
+        <div style="position: relative; display: inline-block;">
+            <audio id="previewAudio" controls style="width: 200px;"></audio>
+            <button type="button" id="clearAudioPreview" style="position: absolute; top: -10px; right: -10px; background: #ff4d4d; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px;">×</button>
+        </div>
+    </div>
+
     <div id="imageModal" class="image-modal">
-        <span class="modal-close">&times;</span>
+        <span class="modal-close">×</span>
         <img class="modal-image" id="modalImage" alt="Enlarged image">
     </div>
         
@@ -125,6 +129,8 @@
             <button type="submit" class="send-button">
                 <i class="material-icons">send</i>
             </button>
+            <!-- Added: Hidden audio input for recorded files -->
+            <input type="file" id="audioInput" name="audio" style="display: none;" accept="audio/*" />
         </form>
 
         <div class="emojiBar">
@@ -133,8 +139,6 @@
             <button id="panelStickers">Stickers</button>
             <button id="panelGIFs">GIFs</button>
             </div>
-            
-            <!-- Emoji panel -->
             <div class="emojiList">
                 <button id="smileface" class="pick"></button>
                 <button id="grinningface" class="pick"></button>
@@ -143,8 +147,6 @@
                 <button id="somface" class="pick"></button>
                 <button id="swfface" class="pick"></button>
             </div>
-            
-            <!-- the best part of telegram ever: STICKERS!! -->
             <div class="stickerList">
                 <button id="smileface" class="pick"></button>
                 <button id="grinningface" class="pick"></button>
@@ -156,8 +158,8 @@
             <button class="toolButtons emoji">
                 <i class="material-icons">face</i>
             </button>
-            
-            <button class="toolButtons audio" id="recordVoice">
+            <!-- Modified: Added ID for audio recording button -->
+            <button class="toolButtons audio" id="recordAudio">
                 <i class="material-icons">mic</i>
             </button>
         </div>
@@ -171,41 +173,98 @@
 
 {% block javascript %}
 <script>
-    let mediaRecorder;
-    let audioChunks = [];
-    let isRecording = false;
-
     function scrollToBottom() {
         const container = document.getElementById('chat_container');
         container.scrollTop = container.scrollHeight;
     }
     scrollToBottom();
 
-    // Handle form submission with text, image, or audio
+    // Added: Audio recording logic using MediaRecorder API
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+
+    const recordButton = document.getElementById('recordAudio');
+    const audioInput = document.getElementById('audioInput');
+    const audioPreview = document.getElementById('audioPreview');
+    const previewAudio = document.getElementById('previewAudio');
+    const clearAudioPreview = document.getElementById('clearAudioPreview');
+
+    recordButton.addEventListener('mousedown', startRecording);
+    recordButton.addEventListener('mouseup', stopRecording);
+    recordButton.addEventListener('touchstart', startRecording);
+    recordButton.addEventListener('touchend', stopRecording);
+
+    function startRecording(e) {
+        e.preventDefault();
+        if (!isRecording) {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    isRecording = true;
+                    recordButton.style.backgroundColor = '#ff4d4d'; // Visual feedback for recording
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.start();
+                    mediaRecorder.addEventListener('dataavailable', event => {
+                        audioChunks.push(event.data);
+                    });
+                    mediaRecorder.addEventListener('stop', () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        previewAudio.src = audioUrl;
+                        audioPreview.style.display = 'block';
+                        const audioFile = new File([audioBlob], `voice_message_${Date.now()}.webm`, { type: 'audio/webm' });
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(audioFile);
+                        audioInput.files = dataTransfer.files;
+                    });
+                })
+                .catch(err => console.error('Error accessing microphone:', err));
+        }
+    }
+
+    function stopRecording(e) {
+        e.preventDefault();
+        if (isRecording && mediaRecorder) {
+            mediaRecorder.stop();
+            isRecording = false;
+            recordButton.style.backgroundColor = '';
+        }
+    }
+
+    clearAudioPreview.addEventListener('click', () => {
+        audioInput.value = '';
+        audioPreview.style.display = 'none';
+        previewAudio.src = '';
+    });
+
+    // Modified: Form submission to handle audio uploads
     document.getElementById('chat_message_form').addEventListener('submit', function(e) {
         e.preventDefault();
         const form = this;
         const formData = new FormData(form);
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
-        // Include image from imageInput if selected
         const imageInput = document.getElementById('imageInput');
         if (imageInput.files[0]) {
             formData.append('image', imageInput.files[0]);
         }
-
-        // Submit only if there's text or an image
-        if (formData.get('body').trim() || formData.get('image')) {
-            fetch('/upload-image/{{ chatroom_name }}', {
+        if (audioInput.files[0]) {
+            formData.append('audio', audioInput.files[0]);
+        }
+        if (formData.get('body').trim() || formData.get('image') || formData.get('audio')) {
+            fetch('/upload-media/{{ chatroom_name }}', {
                 method: 'POST',
                 body: formData,
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    form.reset(); // Clear the form
-                    imageInput.value = ''; // Clear the file input
-                    document.getElementById('imagePreview').style.display = 'none'; // Hide preview
+                    form.reset();
+                    imageInput.value = '';
+                    audioInput.value = '';
+                    document.getElementById('imagePreview').style.display = 'none';
+                    audioPreview.style.display = 'none';
+                    previewAudio.src = '';
                 } else {
                     console.error('Upload failed:', data.error);
                 }
@@ -214,17 +273,14 @@
         }
     });
 
-    // Trigger file input when attach button is clicked
     document.getElementById('attachImage').addEventListener('click', function() {
         document.getElementById('imageInput').click();
     });
 
-    // Show image preview when an image is selected
     document.getElementById('imageInput').addEventListener('change', function() {
         const file = this.files[0];
         const previewDiv = document.getElementById('imagePreview');
         const previewImg = document.getElementById('previewImage');
-
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -237,87 +293,30 @@
         }
     });
 
-    // Clear image preview
     document.getElementById('clearPreview').addEventListener('click', function() {
         const imageInput = document.getElementById('imageInput');
+        imageInput.value = '';
         const previewDiv = document.getElementById('imagePreview');
-        imageInput.value = ''; // Clear the file input
-        previewDiv.style.display = 'none'; // Hide the preview
+        previewDiv.style.display = 'none';
     });
 
-    // Handle voice recording
-    document.getElementById('recordVoice').addEventListener('click', async function() {
-        if (!isRecording) {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const formData = new FormData();
-                    formData.append('audio', audioBlob, 'voice_message.webm');
-                    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
-                    fetch('/upload-audio/{{ chatroom_name }}', {
-                        method: 'POST',
-                        body: formData,
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            console.log('Audio uploaded successfully:', data.message_id);
-                            scrollToBottom();
-                        } else {
-                            console.error('Audio upload failed:', data.error);
-                        }
-                    })
-                    .catch(error => console.error('Error uploading audio:', error));
-
-                    stream.getTracks().forEach(track => track.stop());
-                    isRecording = false;
-                    this.innerHTML = '<i class="material-icons">mic</i>';
-                };
-
-                mediaRecorder.start();
-                isRecording = true;
-                this.innerHTML = '<i class="material-icons">stop</i>';
-            } catch (err) {
-                console.error('Error accessing microphone:', err);
-                alert('Could not access microphone. Please check permissions.');
-            }
-        } else {
-            mediaRecorder.stop();
-        }
-    });
-
-    // Handle image click to show in modal
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('chat-image')) {
             const modal = document.getElementById('imageModal');
             const modalImg = document.getElementById('modalImage');
             modal.style.display = 'flex';
             modalImg.src = e.target.src;
-            console.log('Image clicked, modal opened with src:', e.target.src);
         }
     });
 
-    // Close modal when clicking the close button
     document.querySelector('.modal-close').addEventListener('click', function() {
         const modal = document.getElementById('imageModal');
         modal.style.display = 'none';
-        console.log('Modal closed via close button');
     });
 
-    // Close modal when clicking outside the image
     document.getElementById('imageModal').addEventListener('click', function(e) {
         if (e.target === this || e.target.classList.contains('modal-image')) {
             this.style.display = 'none';
-            console.log('Modal closed via background or image click');
         }
     });
 
@@ -328,11 +327,9 @@
         const now = new Date();
         const date = new Date(timestamp);
         const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-
         const options = { hour: 'numeric', minute: '2-digit', hour12: true };
         const dayOptions = { weekday: 'short' };
         const dateOptions = { month: 'short', day: 'numeric' };
-
         if (diffDays === 0) {
             return date.toLocaleTimeString('en-US', options);
         } else if (diffDays < 7 && date.getWeek() === now.getWeek()) {
@@ -379,7 +376,7 @@
     function updateMessageSeenStatus(messageId) {
         const messageElement = document.getElementById('message-' + messageId);
         if (messageElement) {
-            const tickIcon = document.getElementById('message-' + messageId).querySelector('.material-icons');
+            const tickIcon = messageElement.querySelector('.material-icons');
             if (tickIcon && tickIcon.classList.contains('grey-tick')) {
                 tickIcon.classList.remove('grey-tick');
                 tickIcon.classList.add('blue-tick');
@@ -430,7 +427,6 @@
     function updateChatList(chatroomName, messageBody, messageTime, authorUsername, unreadCount, isSeen) {
         const chatsContainer = document.querySelector('.chats');
         let existingChat = null;
-
         const chatButtons = chatsContainer.querySelectorAll('.chatButton');
         chatButtons.forEach(function(button) {
             const nameElement = button.querySelector('.name');
@@ -441,7 +437,6 @@
                 existingChat = button;
             }
         });
-
         if (existingChat) {
             existingChat.querySelector('.message').textContent = messageBody;
             const dateElement = existingChat.querySelector('.date');
@@ -504,7 +499,6 @@
                 const statusDiv = button.querySelector('.status');
                 let unreadSpan = statusDiv.querySelector('.unread-count');
                 let tickIcon = statusDiv.querySelector('.material-icons');
-
                 if (unreadCount > 0) {
                     if (!unreadSpan) {
                         unreadSpan = document.createElement('span');
@@ -515,7 +509,6 @@
                 } else if (unreadSpan) {
                     unreadSpan.remove();
                 }
-
                 if (isSeen !== null) {
                     if (!tickIcon) {
                         tickIcon = document.createElement('i');
