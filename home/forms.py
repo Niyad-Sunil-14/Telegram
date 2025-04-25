@@ -19,11 +19,12 @@ class SetName(ModelForm):
 
 class ChatmessageCreateForm(ModelForm):
     image = forms.ImageField(required=False, widget=forms.FileInput(attrs={'accept': 'image/*', 'id': 'imageInput'}))
-    audio = forms.FileField(required=False, widget=forms.FileInput(attrs={'accept': 'audio/*', 'id': 'audioInput'}))  # New field
+    audio = forms.FileField(required=False, widget=forms.FileInput(attrs={'accept': 'audio/*', 'id': 'audioInput'}))
+    gif_url = forms.URLField(required=False, widget=forms.HiddenInput(attrs={'id': 'gifInput'}))  # New field for GIFs
 
     class Meta:
         model = GroupMessage
-        fields = ['body', 'image', 'audio']
+        fields = ['body', 'image', 'audio', 'gif_url']
         widgets = {
             'body': forms.TextInput(attrs={
                 'placeholder': 'Add message...',
@@ -39,6 +40,7 @@ class ChatmessageCreateForm(ModelForm):
         self.fields['body'].label = ''
         self.fields['image'].label = ''
         self.fields['audio'].label = ''
+        self.fields['gif_url'].label = ''
 
 class EditMessage(ModelForm):
     class Meta:

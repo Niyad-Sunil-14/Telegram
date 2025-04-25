@@ -94,9 +94,16 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django_settings_export.settings_export',  # Required for settings in templates
             ],
         },
     },
+]
+
+# Export settings to templates
+SETTINGS_EXPORT = [
+    'GIPHY_API_KEY',
+    'EMOJI_API_KEY',
 ]
 
 # WSGI_APPLICATION = 'telegram.wsgi.application'
@@ -201,3 +208,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS=True
 
+GIPHY_API_KEY = env('GIPHY_API_KEY')
+EMOJI_API_KEY = env('EMOJI_API_KEY')

@@ -38,14 +38,14 @@ class GroupMessage(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     body = models.CharField(max_length=300, blank=True, null=True)
     image = models.ImageField(upload_to='chat_images/%Y/%m/%d/', blank=True, null=True)
-    audio = models.FileField(upload_to='chat_audio/%Y/%m/%d/', blank=True, null=True)  # New field for audio
+    audio = models.FileField(upload_to='chat_audio/%Y/%m/%d/', blank=True, null=True)
+    gif_url = models.URLField(blank=True, null=True)  # New field for GIFs
     created = models.DateTimeField(auto_now_add=True)
     time = models.TimeField(auto_now_add=True, null=True)
     is_seen = models.BooleanField(default=False)
 
     def __str__(self):
-        return f'{self.author.username} : {self.body or self.image or self.audio or "No content"}'
+        return f'{self.author.username} : {self.body or self.image or self.audio or self.gif_url or "No content"}'
 
     class Meta:
         ordering = ['created']
-

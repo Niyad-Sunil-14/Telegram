@@ -1,5 +1,5 @@
 {% if message.author == user %}
-<div id="message-{{ message.id }}" class="msg messageSent {% if message.image %}image-message{% elif message.audio %}audio-message{% endif %}" style="display: block;">
+<div id="message-{{ message.id }}" class="msg messageSent {% if message.image %}image-message{% elif message.audio %}audio-message{% elif message.gif_url %}gif-message{% endif %}" style="display: block;">
     {% if message.image %}
         <div class="image-container">
             <div class="dropdown image-dropdown">
@@ -22,6 +22,25 @@
             <img src="{{ message.image.url }}" alt="Chat Image" class="chat-image" />
             {% if message.body %}
             <span class="message-body image-caption">{{ message.body }}</span>
+            {% endif %}
+        </div>
+    {% elif message.gif_url %}
+        <div class="gif-container">
+            <div class="dropdown gif-dropdown">
+                <button id="msg_crud">
+                    <i class="material-icons button">more_vert</i>
+                </button>
+                <div class="dropdown-content">      
+                    <div style="width: -webkit-fill-available;">
+                        <a id="deletefont" onclick="showPopup('{{ message.id }}')">
+                        <img id="trash" src="/static/images/trash.png" alt="">
+                        Delete</a>
+                    </div>
+                </div>
+            </div>
+            <img src="{{ message.gif_url }}" alt="Chat GIF" class="chat-image" style="width: -webkit-fill-available;height: auto;border-radius: 8px;" />
+            {% if message.body %}
+            <span class="message-body gif-caption">{{ message.body }}</span>
             {% endif %}
         </div>
     {% elif message.audio %}
@@ -53,7 +72,9 @@
                 <span class="time-display" data-audio-id="audio-{{ message.id }}">0:00 / 0:00</span>
             </div>
             {% if message.body %}
-            <span class="message-body audio-caption">{{ message.body }}</span>
+            <div id="audio-caption-div">
+                <span class="message-body audio-caption">{{ message.body }}</span>
+            </div>
             {% endif %}
         </div>
     {% else %}
@@ -82,12 +103,19 @@
     <span class="timestamp">{{ message.time }}</span>
 </div>
 {% else %}
-<div id="message-{{ message.id }}" class="msg messageReceived {% if message.image %}image-message{% elif message.audio %}audio-message{% endif %}">
+<div id="message-{{ message.id }}" class="msg messageReceived {% if message.image %}image-message{% elif message.audio %}audio-message{% elif message.gif_url %}gif-message{% endif %}">
     {% if message.image %}
         <div class="image-container">
             <img src="{{ message.image.url }}" alt="Chat Image" class="chat-image" />
             {% if message.body %}
             <span class="message-body image-caption">{{ message.body }}</span>
+            {% endif %}
+        </div>
+    {% elif message.gif_url %}
+        <div class="gif-container">
+            <img src="{{ message.gif_url }}" alt="Chat GIF" class="chat-image" style="width: -webkit-fill-available;height: auto;border-radius: 8px;" />
+            {% if message.body %}
+            <span class="message-body gif-caption">{{ message.body }}</span>
             {% endif %}
         </div>
     {% elif message.audio %}
@@ -102,7 +130,9 @@
                 <span class="time-display" data-audio-id="audio-{{ message.id }}">0:00 / 0:00</span>
             </div>
             {% if message.body %}
-            <span class="message-body audio-caption">{{ message.body }}</span>
+            <div id="audio-caption-div">
+                <span class="message-body audio-caption">{{ message.body }}</span>
+            </div>
             {% endif %}
         </div>
     {% else %}

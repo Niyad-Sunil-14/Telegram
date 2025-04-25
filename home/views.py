@@ -74,6 +74,11 @@ def home(request, chatroom_name='public-chat'):
                     last_message.body = f"🎙️: {last_message.body}"
                 else:
                     last_message.body = "You sent a voice message" if last_message.author == user else "Sent you a voice message"
+            elif last_message.gif_url:
+                if last_message.body:
+                    last_message.body = f"🎞️: {last_message.body}"
+                else:
+                    last_message.body = "You sent a GIF" if last_message.author == user else "Sent you a GIF"
         
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
@@ -106,6 +111,11 @@ def home(request, chatroom_name='public-chat'):
                     last_message.body = f"🎙️: {last_message.body}"
                 else:
                     last_message.body = "You sent a voice message" if last_message.author == user else "Sent you a voice message"
+            elif last_message.gif_url:
+                if last_message.body:
+                    last_message.body = f"🎞️: {last_message.body}"
+                else:
+                    last_message.body = "You sent a GIF" if last_message.author == user else "Sent you a GIF"
         display_name = other_member.name if other_member.name else other_member.username
         recent_chats.append({
             'group_name': latest_group.group_name,
@@ -253,6 +263,11 @@ def chat_view(request, chatroom_name='public-chat'):
                     last_message.body = f"🎙️: {last_message.body}"
                 else:
                     last_message.body = "You sent a voice message" if last_message.author == user else "Sent you a voice message"
+            elif last_message.gif_url:
+                if last_message.body:
+                    last_message.body = f"🎞️: {last_message.body}"
+                else:
+                    last_message.body = "You sent a GIF" if last_message.author == user else "Sent you a GIF"
         if group.is_private:
             other_member = group.members.exclude(id=user.id).first()
             if other_member:
@@ -283,6 +298,11 @@ def chat_view(request, chatroom_name='public-chat'):
                     last_message.body = f"🎙️: {last_message.body}"
                 else:
                     last_message.body = "You sent a voice message" if last_message.author == user else "Sent you a voice message"
+            elif last_message.gif_url:
+                if last_message.body:
+                    last_message.body = f"🎞️: {last_message.body}"
+                else:
+                    last_message.body = "You sent a GIF" if last_message.author == user else "Sent you a GIF"
         display_name = other_member.name if other_member.name else other_member.username
         recent_chats.append({
             'group_name': latest_group.group_name,

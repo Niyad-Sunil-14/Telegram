@@ -100,7 +100,7 @@
         </div>
     </div>
 
-    <!-- Added: Audio preview section -->
+    <!-- Audio preview section -->
     <div id="audioPreview" style="display: none; position: absolute; bottom: 53px; left: 27.9%; transform: translateX(-50%); background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); padding: 10px; border: 1px solid #ddd;">
         <div style="position: relative; display: inline-block;">
             <audio id="previewAudio" controls style="width: 200px;"></audio>
@@ -126,39 +126,31 @@
               enctype="multipart/form-data">
             {% csrf_token %}
             {{ form.body }}
-            <button type="submit" class="send-button">
+            <button type="submit" class="send-button tbButton otherTools toolButtons" style="margin-right: -44px; height: 50px;width: 50px;margin-top: -8px;">
                 <i class="material-icons">send</i>
             </button>
-            <!-- Added: Hidden audio input for recorded files -->
+            <!-- Hidden audio input for recorded files -->
             <input type="file" id="audioInput" name="audio" style="display: none;" accept="audio/*" />
+            <!-- Hidden GIF input -->
+            <input type="hidden" id="gifInput" name="gif_url" />
         </form>
 
-        <div class="emojiBar">
+        <div class="emojiBar" id="emojiBar" style="display: none;">
             <div class="emoticonType">
-            <button id="panelEmoji">Emoji</button>
-            <button id="panelStickers">Stickers</button>
-            <button id="panelGIFs">GIFs</button>
+                <button id="panelEmoji" class="active">Emoji</button>
+                <button id="panelGIFs">GIFs</button>
             </div>
-            <div class="emojiList">
-                <button id="smileface" class="pick"></button>
-                <button id="grinningface" class="pick"></button>
-                <button id="tearjoyface" class="pick"></button>
-                <button id="rofl" class="pick"></button>
-                <button id="somface" class="pick"></button>
-                <button id="swfface" class="pick"></button>
-            </div>
-            <div class="stickerList">
-                <button id="smileface" class="pick"></button>
-                <button id="grinningface" class="pick"></button>
-                <button id="tearjoyface" class="pick"></button>
+            <div class="emojiList" id="emojiList"></div>
+            <div class="gifList" id="gifList" style="display: none;"></div>
+            <div class="gifSearch" id="gifSearch" style="display: none; padding: 10px;">
+                <input type="text" id="gifSearchInput" placeholder="Search GIFs..." style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;" />
             </div>
         </div>
         
         <div class="otherTools">
-            <button class="toolButtons emoji">
+            <button class="toolButtons emoji" id="toggleEmoji">
                 <i class="material-icons">face</i>
             </button>
-            <!-- Modified: Added ID for audio recording button -->
             <button class="toolButtons audio" id="recordAudio">
                 <i class="material-icons">mic</i>
             </button>
@@ -179,7 +171,237 @@
     }
     scrollToBottom();
 
-    // Added: Audio recording logic using MediaRecorder API
+    
+    // Emoji and GIF functionality
+    function populateEmojis(emojis) {
+        const emojiList = document.getElementById('emojiList');
+        emojiList.innerHTML = '';
+        emojis.forEach(emoji => {
+            const button = document.createElement('button');
+            button.className = 'pick';
+            button.id = emoji.slug;
+            button.textContent = emoji.character;
+            button.addEventListener('click', () => {
+                const input = document.querySelector('#chat_message_form input[name="body"]');
+                input.value += emoji.character;
+                input.focus();
+            });
+            emojiList.appendChild(button);
+        });
+    }
+
+    function populateGIFs(gifs) {
+        const gifList = document.getElementById('gifList');
+        gifList.innerHTML = '';
+        gifs.forEach(gif => {
+            const button = document.createElement('button');
+            button.className = 'pick';
+            button.style.padding = '0';
+            button.style.background = 'none';
+            button.style.border = 'none';
+            const img = document.createElement('img');
+            img.src = gif.images.fixed_height_small.url;
+            img.alt = gif.title;
+            img.style.width = '100px';
+            img.style.height = '100px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '4px';
+            button.appendChild(img);
+            button.addEventListener('click', () => {
+                const gifInput = document.getElementById('gifInput');
+                gifInput.value = gif.images.original.url;
+                const form = document.getElementById('chat_message_form');
+                const formData = new FormData(form);
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                if (formData.get('gif_url')) {
+                    fetch('/upload-media/{{ chatroom_name }}', {
+                        method: 'POST',
+                        body: formData,
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            form.reset();
+                            gifInput.value = '';
+                            document.getElementById('emojiBar').style.display = 'none';
+                        } else {
+                            console.error('Upload failed:', data.error);
+                        }
+                    })
+                    .catch(error => console.error('Error uploading:', error));
+                }
+            });
+            gifList.appendChild(button);
+        });
+    }
+
+    // Fetch emojis from Open Emoji API
+    function fetchEmojis() {
+        const apiKey = '{{ settings.EMOJI_API_KEY }}'; // Replace with your Open Emoji API key
+        const apiUrl = `https://emoji-api.com/emojis?access_key=${apiKey}`;
+        const emojiList = document.getElementById('emojiList');
+        emojiList.innerHTML = '<p>Loading emojis...</p>';
+
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch emojis');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const emojis = data.slice(0, 5000).map(emoji => ({
+                    slug: emoji.slug,
+                    character: emoji.character
+                }));
+                populateEmojis(emojis);
+            })
+            .catch(error => {
+                console.error('Error fetching emojis:', error);
+                emojiList.innerHTML = '<p>Failed to load emojis</p>';
+            });
+    }
+
+    // Fetch GIFs from Giphy API
+    function fetchGIFs(query = '') {
+        const apiKey = '{{ settings.GIPHY_API_KEY }}'; // Replace with your Giphy API key
+        const baseUrl = query ? 
+            `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=50` :
+            `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=50`;
+        const gifList = document.getElementById('gifList');
+        gifList.innerHTML = '<p>Loading GIFs...</p>';
+
+        fetch(baseUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch GIFs');
+                }
+                return response.json();
+            })
+            .then(data => {
+                populateGIFs(data.data);
+            })
+            .catch(error => {
+                console.error('Error fetching GIFs:', error);
+                gifList.innerHTML = '<p>Failed to load GIFs</p>';
+            });
+    }
+
+    // Toggle emoji bar with event delegation
+    function setupEmojiToggle() {
+        const replyBar = document.querySelector('.replyBar');
+        if (!replyBar) {
+            console.error('Reply bar not found');
+            return;
+        }
+
+        replyBar.addEventListener('click', (e) => {
+            const emojiButton = e.target.closest('#toggleEmoji');
+            if (emojiButton) {
+                e.preventDefault();
+                e.stopPropagation();
+                const emojiBar = document.getElementById('emojiBar');
+                if (emojiBar) {
+                    console.log('Toggling emojiBar, current display:', emojiBar.style.display);
+                    emojiBar.style.display = emojiBar.style.display === 'none' || !emojiBar.style.display ? 'block' : 'none';
+                    if (emojiBar.style.display === 'block') {
+                        console.log('Fetching emojis');
+                        try {
+                            fetchEmojis();
+                        } catch (err) {
+                            console.error('Error in fetchEmojis:', err);
+                        }
+                    }
+                } else {
+                    console.error('emojiBar element not found');
+                }
+            }
+        });
+    }
+
+    // Close emoji bar when clicking outside
+    document.addEventListener('click', (e) => {
+        const emojiBar = document.getElementById('emojiBar');
+        const emojiButton = document.getElementById('toggleEmoji');
+        if (emojiBar && emojiButton && !emojiBar.contains(e.target) && !emojiButton.contains(e.target)) {
+            console.log('Closing emojiBar');
+            emojiBar.style.display = 'none';
+        }
+    });
+
+    // Tab switching
+    function setupTabSwitching() {
+        const panelEmoji = document.getElementById('panelEmoji');
+        const panelGIFs = document.getElementById('panelGIFs');
+        if (!panelEmoji || !panelGIFs) {
+            console.error('Tab buttons not found');
+            return;
+        }
+
+        panelEmoji.addEventListener('click', () => {
+            console.log('Switching to Emoji tab');
+            document.getElementById('emojiList').style.display = 'block';
+            document.getElementById('gifList').style.display = 'none';
+            document.getElementById('gifSearch').style.display = 'none';
+            panelEmoji.classList.add('active');
+            panelGIFs.classList.remove('active');
+            try {
+                fetchEmojis();
+            } catch (err) {
+                console.error('Error in fetchEmojis:', err);
+            }
+        });
+
+        panelGIFs.addEventListener('click', () => {
+            console.log('Switching to GIFs tab');
+            document.getElementById('emojiList').style.display = 'none';
+            document.getElementById('gifList').style.display = 'block';
+            document.getElementById('gifSearch').style.display = 'block';
+            panelEmoji.classList.remove('active');
+            panelGIFs.classList.add('active');
+            try {
+                fetchGIFs();
+            } catch (err) {
+                console.error('Error in fetchGIFs:', err);
+            }
+        });
+    }
+
+    // GIF search functionality
+    function setupGIFSearch() {
+        const gifSearchInput = document.getElementById('gifSearchInput');
+        if (gifSearchInput) {
+            gifSearchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                console.log('Searching GIFs with query:', query);
+                try {
+                    fetchGIFs(query);
+                } catch (err) {
+                    console.error('Error in fetchGIFs:', err);
+                }
+            });
+        } else {
+            console.error('gifSearchInput not found');
+        }
+    }
+
+    // Initialize event listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('Initializing emoji and tab functionality');
+        setupEmojiToggle();
+        setupTabSwitching();
+        setupGIFSearch();
+    });
+
+    // Reattach listeners after HTMX updates
+    document.addEventListener('htmx:afterSwap', () => {
+        console.log('HTMX swap detected, reinitializing emoji toggle');
+        setupEmojiToggle();
+        setupTabSwitching();
+        setupGIFSearch();
+    });
+
+    // Audio recording logic
     let mediaRecorder;
     let audioChunks = [];
     let isRecording = false;
@@ -201,7 +423,7 @@
             navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(stream => {
                     isRecording = true;
-                    recordButton.style.backgroundColor = '#ff4d4d'; // Visual feedback for recording
+                    recordButton.style.backgroundColor = '#ff4d4d';
                     mediaRecorder = new MediaRecorder(stream);
                     audioChunks = [];
                     mediaRecorder.start();
@@ -238,7 +460,7 @@
         previewAudio.src = '';
     });
 
-    // Modified: Form submission to handle audio uploads
+    // Form submission
     document.getElementById('chat_message_form').addEventListener('submit', function(e) {
         e.preventDefault();
         const form = this;
@@ -251,7 +473,7 @@
         if (audioInput.files[0]) {
             formData.append('audio', audioInput.files[0]);
         }
-        if (formData.get('body').trim() || formData.get('image') || formData.get('audio')) {
+        if (formData.get('body').trim() || formData.get('image') || formData.get('audio') || formData.get('gif_url')) {
             fetch('/upload-media/{{ chatroom_name }}', {
                 method: 'POST',
                 body: formData,
@@ -262,9 +484,11 @@
                     form.reset();
                     imageInput.value = '';
                     audioInput.value = '';
+                    document.getElementById('gifInput').value = '';
                     document.getElementById('imagePreview').style.display = 'none';
-                    audioPreview.style.display = 'none';
+                    document.getElementById('audioPreview').style.display = 'none';
                     previewAudio.src = '';
+                    document.getElementById('emojiBar').style.display = 'none';
                 } else {
                     console.error('Upload failed:', data.error);
                 }

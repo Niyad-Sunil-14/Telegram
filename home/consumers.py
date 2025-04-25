@@ -60,6 +60,8 @@ class ChatroomConsumer(WebsocketConsumer):
                 display_body = f"🖼️: {message.body}" if message.body else ("You sent a photo" if member == message.author else "Sent you a photo")
             elif message.audio:
                 display_body = f"🎙️: {message.body}" if message.body else ("You sent a voice message" if member == message.author else "Sent you a voice message")
+            elif message.gif_url:
+                display_body = f"🎞️: {message.body}" if message.body else ("You sent a GIF" if member == message.author else "Sent you a GIF")
             async_to_sync(self.channel_layer.group_send)(
                 f"user_{member.id}",
                 {
