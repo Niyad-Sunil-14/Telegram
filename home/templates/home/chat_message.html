@@ -1,11 +1,11 @@
 {% if message.author == user %}
-<div id="message-{{ message.id }}" class="msg messageSent {% if message.image %}image-message{% elif message.audio %}audio-message{% elif message.gif_url %}gif-message{% endif %}" style="display: block;">
+<div id="message-{{ message.id }}" class="msg messageSent {% if message.image %}image-message{% elif message.audio %}audio-message{% elif message.gif_url %}gif-message{% endif %}">
     {% if message.image %}
         <div class="image-container">
             <div class="dropdown image-dropdown">
-                <button id="msg_crud">
+                <div id="msg_crud">
                     <i class="material-icons button">more_vert</i>
-                </button>
+                </div>
                 <div class="dropdown-content">
                     <div style="width: -webkit-fill-available;">
                         <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body|escapejs }}')">
@@ -20,16 +20,16 @@
                 </div>
             </div>
             <img src="{{ message.image.url }}" alt="Chat Image" class="chat-image" />
-            {% if message.body %}
-            <span class="message-body image-caption">{{ message.body }}</span>
-            {% endif %}
         </div>
+        {% if message.body %}
+            <span class="message-body image-caption">{{ message.body }}</span>
+        {% endif %}
     {% elif message.gif_url %}
         <div class="gif-container">
             <div class="dropdown gif-dropdown">
-                <button id="msg_crud">
+                <div id="msg_crud">
                     <i class="material-icons button">more_vert</i>
-                </button>
+                </div>
                 <div class="dropdown-content">      
                     <div style="width: -webkit-fill-available;">
                         <a id="deletefont" onclick="showPopup('{{ message.id }}')">
@@ -46,9 +46,9 @@
     {% elif message.audio %}
         <div class="audio-container">
             <div class="dropdown audio-dropdown">
-                <button id="msg_crud">
+                <div id="msg_crud">
                     <i class="material-icons button">more_vert</i>
-                </button>
+                </div>
                 <div class="dropdown-content">
                     <div style="width: -webkit-fill-available;">
                         <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body|escapejs }}')">
@@ -79,9 +79,9 @@
         </div>
     {% else %}
         <div class="dropdown">
-            <button id="msg_crud">
+            <div id="msg_crud">
                 <i class="material-icons button">more_vert</i>
-            </button>
+            </div>
             <div class="dropdown-content">
                 <div style="width: -webkit-fill-available;">
                     <a id="editfont" onclick="openEditModal('{{ message.id }}', '{{ message.body|escapejs }}')">
@@ -99,18 +99,19 @@
         <span class="message-body">{{ message.body }}</span>
         {% endif %}
     {% endif %}
-    <i class="material-icons {% if message.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
-    <span class="timestamp">{{ message.time }}</span>
-</div>
+        <span class="timestamp">{{ message.time }}
+            <i class="material-icons {% if message.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
+        </span>
+    </div>
 {% else %}
 <div id="message-{{ message.id }}" class="msg messageReceived {% if message.image %}image-message{% elif message.audio %}audio-message{% elif message.gif_url %}gif-message{% endif %}">
     {% if message.image %}
         <div class="image-container">
             <img src="{{ message.image.url }}" alt="Chat Image" class="chat-image" />
-            {% if message.body %}
-            <span class="message-body image-caption">{{ message.body }}</span>
-            {% endif %}
         </div>
+        {% if message.body %}
+            <span class="message-body image-caption">{{ message.body }}</span>
+        {% endif %}
     {% elif message.gif_url %}
         <div class="gif-container">
             <img src="{{ message.gif_url }}" alt="Chat GIF" class="chat-image" style="width: -webkit-fill-available;height: auto;border-radius: 8px;" />

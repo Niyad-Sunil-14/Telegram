@@ -3,7 +3,7 @@
 {% block left_panel %}
 <div class="leftPanel">
     <header>
-        <button class="trigger">
+        <button class="trigger" style="margin-top: 18px;">
             <svg viewBox="0 0 24 24">
                 <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" />
             </svg>
@@ -27,7 +27,7 @@
                             {{ chat.display_name }}
                         </p>
                         {% if chat.last_message %}
-                        <p class="message">{{ chat.last_message.body }}</p>
+                        <p class="message">{{ chat.last_message.body|truncatechars:15 }}</p>
                         {% else %}
                         <p class="message">No messages yet</p>
                         {% endif %}
@@ -40,7 +40,7 @@
                         <span class="unread-count">{{ chat.unread_count }}</span>
                         {% endif %}
                         {% if chat.is_seen is not None %}
-                        <i style="position: absolute;right: 8px;top: 42px;" 
+                        <i style="position: absolute;right: 7px;top: 37px;" 
                            class="material-icons {% if chat.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
                         {% endif %}
                     </div>
@@ -126,9 +126,10 @@
               enctype="multipart/form-data">
             {% csrf_token %}
             {{ form.body }}
-            <button type="submit" class="send-button tbButton otherTools toolButtons" style="margin-right: -44px; height: 50px;width: 50px;margin-top: -8px;">
-                <i class="material-icons">send</i>
+            <button type="submit" class="send-button tbButton otherTools toolButtons">
+                <i class="material-icons" style="padding-left: 4px;">send</i>
             </button>
+            
             <!-- Hidden audio input for recorded files -->
             <input type="file" id="audioInput" name="audio" style="display: none;" accept="audio/*" />
             <!-- Hidden GIF input -->
@@ -551,14 +552,19 @@
         const now = new Date();
         const date = new Date(timestamp);
         const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-        const options = { hour: 'numeric', minute: '2-digit', hour12: true };
-        const dayOptions = { weekday: 'short' };
-        const dateOptions = { month: 'short', day: 'numeric' };
+        
         if (diffDays === 0) {
-            return date.toLocaleTimeString('en-US', options);
+            let hours = date.getHours();
+            const minutes = date.getMinutes();
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12 || 12; // Convert 0 or 12 to 12 for 12-hour clock
+            const minutesFormatted = minutes < 10 ? `0${minutes}` : minutes;
+            return `${hours}:${minutesFormatted} ${ampm}`;
         } else if (diffDays < 7 && date.getWeek() === now.getWeek()) {
+            const dayOptions = { weekday: 'short' };
             return date.toLocaleDateString('en-US', dayOptions);
         } else {
+            const dateOptions = { month: 'short', day: 'numeric' };
             return date.toLocaleDateString('en-US', dateOptions);
         }
     }

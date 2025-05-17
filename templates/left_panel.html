@@ -1,7 +1,7 @@
 {% block left_panel %}
 <div class="leftPanel">
     <header>
-        <button class="trigger">
+        <button class="trigger" style="margin-top: 18px;">
             <svg viewBox="0 0 24 24">
                 <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" />
             </svg>
@@ -25,7 +25,7 @@
                             {{ chat.display_name }}
                         </p>
                         {% if chat.last_message %}
-                        <p class="message">{{ chat.last_message.body|truncatechars:30 }}</p>
+                        <p class="message">{{ chat.last_message.body|truncatechars:15 }}</p>
                         {% else %}
                         <p class="message">No messages yet</p>
                         {% endif %}
@@ -38,7 +38,7 @@
                         <span class="unread-count">{{ chat.unread_count }}</span>
                         {% endif %}
                         {% if chat.is_seen is not None %}
-                        <i style="position: absolute;right: 8px;top: 42px;" 
+                        <i style="position: absolute;right: 7px;top: 37px;" 
                            class="material-icons {% if chat.is_seen %}blue-tick{% else %}grey-tick{% endif %}">done_all</i>
                         {% endif %}
                     </div>

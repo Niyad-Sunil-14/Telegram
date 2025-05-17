@@ -59,3 +59,47 @@ $(".convHistory, .replyMessage").click(function(){
     $(".emojiBar").fadeOut(120);
 });
 });
+
+
+
+
+
+
+
+
+$(document).ready(function(){
+    /* make side menu show up */
+$(".trigger2").click(function(){
+    $(".overlay2, .menuWrap").fadeIn(180);
+            $(".menu").animate({opacity: '1', left: '0px'}, 180);
+});
+    
+    /* make config menu show up */
+    $(".about").click(function(){
+            $(".config2").animate({opacity: '1', right: '0px'}, 180);
+        /* hide others */
+            $(".menuWrap").fadeOut(180);
+            $(".menu").animate({opacity: '0', left: '-320px'}, 180);
+});
+
+    // Show/Hide the other notification options
+    $(".deskNotif").click(function(){
+    $(".showSName, .showPreview, .playSounds").toggle();
+});
+
+    /* close all overlay elements */
+    $(".overlay2").click(function () {
+            $(".overlay2, .menuWrap").fadeOut(180);
+    $(".menu").animate({opacity: '0', left: '-320px'}, 180);
+            $(".config2").animate({opacity: '0', right: '-200vw'}, 180);
+});
+    
+    //This also hide everything, but when people press ESC
+    $(document).keydown(function(e) {
+         if (e.keyCode == 27) {
+            $(".overlay2, .menuWrap").fadeOut(180);
+    $(".menu").animate({opacity: '0', left: '-320px'}, 180);
+            $(".config2").animate({opacity: '0', right: '-200vw'}, 180);
+        }
+});
+});

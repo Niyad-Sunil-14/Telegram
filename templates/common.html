@@ -7,8 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/telegram.css' %}" >
-    <link rel="stylesheet" href="{% static 'css/login.css' %}" >
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/futuristic.css' %}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://kit.fontawesome.com/189be81f31.js" crossorigin="anonymous"></script>
     {% django_htmx_script %}
@@ -48,7 +48,7 @@
             const recentChats = document.getElementById('recentChats');
             const searchResults = document.querySelector('.search-results');
 
-            if (searchInput && recentChats) {  // Ensure elements exist
+            if (searchInput && recentChats) {
                 searchInput.addEventListener('focus', function() {
                     recentChats.style.display = 'none';
                 });

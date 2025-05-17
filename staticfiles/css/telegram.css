@@ -586,15 +586,17 @@ div[class~="onTop"] > .count {
 
 .status .date {
 	position: absolute;
-	right: 12px;
-	top: 12px;
-	font-size: 12px;
+    right: 38px;
+    top: 49px;
+    font-size: 14px;
+    width: 65px;
+    text-align-last: end;
 }
 
 .status .read {
 	position: absolute;
-	right: 53px;
-	top: 6px;
+    right: 7px;
+    top: 43px;
 }
 
 .rightPanel {
@@ -793,19 +795,6 @@ div[class~="onTop"] > .count {
 	float: right;
 	width: 120px;
 	height: 70px;
-}
-
-.emojiBar {
-	display: none;
-	position: absolute;
-	width: 325px;
-	height: 200px;
-	padding: 10px;
-	right: 30px;
-	bottom: 80px;
-	border: 2px solid #DDD;
-	border-radius: 3px;
-	background: #FFF;
 }
 
 .emoticonType {
@@ -1010,9 +999,772 @@ div[class~="onTop"] > .count {
 }
 
 #chat_message_form{
-	position: absolute;
-    padding-left: 80px;
+	margin-left: 80px;
+    margin-top: 18px;
+    margin-right: 167px;
+    position: absolute;
     min-width: -webkit-fill-available;
-    padding-right: 80px;
-    padding-top: 25px;
+}
+
+
+
+
+.config2 {
+	position: absolute;
+	width: 50%;
+	height: 100vh;
+	left: 0px;
+	right: -200vw;
+	top: 0px;
+	margin: auto;
+	background: #DDD;
+	overflow-x: hidden;
+	overflow-y: auto;
+	display: block;
+	z-index: 520;
+	opacity: 0;
+}
+
+/* SOLVING RESPONSIVE DESIGN ISSUES */
+@media screen and (max-width: 1180px) {	
+	.config2 {
+		width: 60%;
+	}
+}
+
+@media screen and (max-width: 980px) {
+	.config2 {
+		width: 90%;
+	}
+}
+
+.overlay2 {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.8);
+	z-index: 2;
+	display: none;
+}
+
+#msg_crud{
+	margin-right: -14px;
+	float: right;
+    margin-top: -15px;
+    background: transparent;
+}
+
+
+
+
+
+.dropbtn {
+	background-color: #4CAF50;
+	color: white;
+	padding: 16px;
+	font-size: 16px;
+	border: none;
+	cursor: pointer;
+  }
+  
+  .dropdown {
+	position: relative;
+	float: right;
+  }
+  
+  .dropdown-content {
+	display: none;
+	position: absolute;
+	background-color: #f9f9f9;
+	min-width: 160px;
+	box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+	z-index: 1;
+	margin-left: -150px;
+	place-items: center;
+	padding-top: 5px;
+	padding-bottom: 5px;
+  }
+  
+  .dropdown-content a {
+	color: black;
+	padding: 12px 16px;
+	text-decoration: none;
+	display: block;
+  }
+  
+  .dropdown-content a:hover {background-color: #eaeaea}
+  
+  .dropdown:hover .dropdown-content {
+	display: block;
+  }
+  
+  .dropdown:hover .dropbtn {
+	background-color: #3e8e41;
+  }
+
+
+
+#popupDialog {
+	display: none;
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	padding: 20px;
+	background-color: #fff;
+	border: 1px solid #ccc;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	z-index: 1000;
+}
+
+#overlay {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 999;
+}
+
+ 
+
+
+
+
+
+.modal {
+	display: none;
+	position: fixed;
+	z-index: 1000;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.5);
+}
+.modal-content {
+	background-color: white;
+	margin: 20% auto;
+	padding: 20px;
+	border-radius: 10px;
+	width: 30%;
+	text-align: center;
+	padding-bottom: 12px;
+}
+.modal button {
+	margin: 10px;
+	padding: 10px 20px;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+}
+.confirm-btn { background-color: red; color: white; }
+.cancel-btn { background-color: gray; color: white; }
+
+
+#deletefont{
+	text-decoration: none;
+    width: -webkit-fill-available;
+    text-align: center;
+	padding-left: 40px;
+}
+
+#trash{
+	height: 23px;
+    position: absolute;
+    margin-left: -39px;
+    margin-top: -3px;
+}
+
+#edit{
+	height: 23px;
+    position: absolute;
+    margin-left: -38.5px;
+    margin-top: -3px;
+}
+
+#editfont{
+	text-decoration: none;
+    width: -webkit-fill-available;
+    text-align: center;
+	padding-left: 20px;
+}
+
+
+
+  .edit-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .edit-modal-content {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 500px;
+    padding: 0;
+    overflow: hidden;
+    animation: modalFadeIn 0.3s ease;
+  }
+  
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .edit-modal-header {
+    background-color: #419fd9;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .edit-modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+  }
+  
+  .edit-modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+  }
+  
+  .edit-modal-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .edit-modal-body {
+    padding: 20px;
+  }
+  
+  .edit-modal-form textarea {
+    width: 94.5%;
+    min-height: 100px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 15px;
+    resize: none;
+    font-family: inherit;
+    margin-bottom: 20px;
+    transition: border-color 0.2s;
+  }
+  
+  .edit-modal-form textarea:focus {
+    border-color: #419fd9;
+    outline: none;
+  }
+  
+  .edit-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .btn-cancel, .btn-save {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .btn-cancel {
+    background-color: #f2f2f2;
+    color: #333;
+    margin-right: 10px;
+  }
+  
+  .btn-cancel:hover {
+    background-color: #e5e5e5;
+  }
+  
+  .btn-save {
+    background-color: #128C7E;
+    color: white;
+  }
+  
+  .btn-save:hover {
+    background-color: #0d7066;
+  }
+  
+  /* Character counter */
+  .char-counter {
+    font-size: 12px;
+    color: #666;
+    text-align: right;
+    margin-bottom: 10px;
+  }
+  
+  .char-counter.limit {
+    color: #e74c3c;
+  }
+
+
+
+
+
+
+
+
+    /* Modal Styling */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-overlay {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+    }
+
+    .modal-content {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        position: relative;
+        max-width: 350px;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .modal-buttons {
+        margin-top: 15px;
+    }
+
+    .confirm-btn {
+        background: red;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .confirm-btn:hover {
+        background: darkred;
+    }
+
+    .cancel-btn {
+        background: #ddd;
+        color: black;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .cancel-btn:hover {
+        background: #bbb;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+
+    .unread-count {
+        background-color: #34B7F1; /* Blue color for visibility */
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        margin-right: 5px;
+		position: absolute;
+		right: 33px;
+		top: 18px;
+    }
+
+
+
+
+
+
+	.search-result-item {
+		display: block;
+		padding: 8px;
+		text-decoration: none;
+		color: inherit;
+	}
+	
+	.search-result-item:hover {
+		background-color: #f5f5f5;
+	}
+	
+	.search-form {
+		margin: 10px 0;
+	}
+	.search-results {
+		padding: 10px;
+		max-height: 300px;
+		overflow-y: auto;
+		display: block; /* Ensure it takes up space */
+	}
+	
+	.chats {
+		transition: opacity 0.3s ease; /* Optional: smooth fade effect */
+	}
+	
+	.chats[style*="display: none"] {
+		opacity: 0; /* Optional: fade out when hidden */
+	}
+
+
+
+
+	.blue-tick {
+		color: #34B7F1;
+		position: absolute;
+		bottom: 10px;
+		right: 12px;
+	}
+	.grey-tick {
+		color: #757575;
+		position: absolute;
+		bottom: 10px;
+		right: 12px;
+	}
+	.chatStatus.online {
+		color: #34C759; /* Green for online */
+	}
+	.chatStatus {
+		color: #757575; /* Grey for offline */
+	}
+	.status.online {
+		background-color: #34C759; /* Green dot for online */
+	}
+	.status {
+		background-color: #757575; /* Grey dot for offline */
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+	}
+	.image-message {
+		border-radius: 12px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		padding: 6px;
+		max-width: 340px;
+	}
+	.image-container {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.chat-image {
+		width: 300px;
+		height: auto;
+		object-fit: cover;
+		border-radius: 8px;
+		margin-bottom: 8px;
+	}
+	.image-caption {
+		  padding: 5px 10px;
+		  display: inline-block;
+	  }
+	.image-dropdown {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		z-index: 2;
+	}
+	.image-dropdown #msg_crud {
+		background-color: rgba(0, 0, 0, 0.5);
+		border-radius: 50%;
+		padding: 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: -9px;
+	}
+	.image-dropdown .material-icons {
+		color: #fff;
+		font-size: 20px;
+	}
+
+
+
+
+
+
+	/* Modal styles */
+.image-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+}
+
+.modal-image {
+    max-width: 90%;
+    max-height: 90vh;
+    object-fit: contain;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    color: #fff;
+    font-size: 35px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.modal-close:hover,
+.modal-close:focus {
+    color: #ccc;
+    text-decoration: none;
+}
+
+.chat-image {
+    cursor: pointer;
+}
+
+/* Existing styles for recent chats */
+.chatButton .message {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px; /* Adjust based on your design */
+}
+
+.custom-audio-player {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 250px;
+}
+.chat-audio {
+	display: none; /* Hide default audio controls */
+}
+.play-pause-btn {
+	background: #3295ff;
+	border: none;
+	border-radius: 50%;
+	width: 40px;
+	height: 40px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: white;
+	font-size: 20px;
+	transition: background 0.2s;
+}
+.play-pause-btn:hover {
+	background: #0056b3;
+}
+.progress-bar {
+	flex: 1;
+	height: 5px;
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
+	background: #ddd;
+	border-radius: 5px;
+}
+.progress-bar::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 12px;
+	height: 12px;
+	background: #007bff;
+	border-radius: 50%;
+	cursor: pointer;
+}
+.progress-bar::-moz-range-thumb {
+	width: 12px;
+	height: 12px;
+	background: #007bff;
+	border-radius: 50%;
+	cursor: pointer;
+}
+.time-display {
+	min-width: 60px;
+	text-align: right;
+}
+.audio-container {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 5px;
+}
+.audio-caption {
+	align-self: start;
+	position: absolute;
+    padding: 5px;
+}
+#audio-caption-div{
+	width: -webkit-fill-available;
+}
+
+#id_body{
+	margin-top: 10px;
+}
+
+
+.emojiList {
+	width: auto;
+    max-height: 150px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 5px;
+    padding: 5px;
+}
+
+.emojiList button.pick {
+    font-size: 24px;
+    padding: 5px;
+    margin: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.emoticonType button {
+    padding: 5px 10px;
+    margin-right: 5px;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.emoticonType button.active {
+    border-bottom: 2px solid #007bff;
+    font-weight: bold;
+}
+
+
+
+/* GIF container styling */
+.gif-container {
+    position: relative;
+    max-width: 300px;
+    margin: 10px 0;
+}
+
+.gif-container img.chat-image {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.gif-container img.chat-image:hover {
+    transform: scale(1.05);
+}
+
+.gif-caption {
+    display: block;
+    margin-top: 5px;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Ensure dropdown aligns with GIFs */
+.gif-dropdown {
+	position: absolute;
+    top: -11px;
+    right: -9px;
+}
+
+/* Adjust emojiBar for GIF tab */
+.emojiBar {
+    position: absolute;
+    width: 338px;
+	height: 200px;
+	padding: 10px;
+	right: 30px;
+	bottom: 80px;
+    background: #fff;
+	border: 2px solid #DDD;
+	border-radius: 3px;
+	box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    max-height: 300px;
+	z-index: 1000; /* Added to ensure it appears above other elements */
+
+}
+
+.emoticonType {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+}
+
+.emoticonType button {
+    flex: 1;
+    padding: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.emoticonType button.active {
+    background: #f0f0f0;
+    border-bottom: 2px solid #007bff;
+}
+
+.gifList {
+    max-height: 88px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    padding: 10px;
+}
+
+.gifList button {
+    cursor: pointer;
+}
+
+.gifSearch {
+    padding: 10px;
 }
